@@ -1,0 +1,42 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.705
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ETrade10", "ETrade10\ETrade10.csproj", "{281EDBDA-C9E6-496F-B007-566C870BAABA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{91322007-635E-4264-8357-934E4A349174}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ETrade10App", "ETrade10App\ETrade10App.csproj", "{02F4B8EB-9649-4C15-B78A-A7F74A41AF5F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ETrade10Tests", "ETrade10Tests\ETrade10Tests.csproj", "{F8F786B7-3295-49F5-ABC8-461D715FF978}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{281EDBDA-C9E6-496F-B007-566C870BAABA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{281EDBDA-C9E6-496F-B007-566C870BAABA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{281EDBDA-C9E6-496F-B007-566C870BAABA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{281EDBDA-C9E6-496F-B007-566C870BAABA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02F4B8EB-9649-4C15-B78A-A7F74A41AF5F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02F4B8EB-9649-4C15-B78A-A7F74A41AF5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02F4B8EB-9649-4C15-B78A-A7F74A41AF5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02F4B8EB-9649-4C15-B78A-A7F74A41AF5F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8F786B7-3295-49F5-ABC8-461D715FF978}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8F786B7-3295-49F5-ABC8-461D715FF978}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8F786B7-3295-49F5-ABC8-461D715FF978}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8F786B7-3295-49F5-ABC8-461D715FF978}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A9105F9F-ACB0-4D0F-A38F-92BE614C1942}
+	EndGlobalSection
+EndGlobal

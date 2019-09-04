@@ -1,0 +1,12 @@
+﻿using System;
+
+namespace OkonkwoETrade10.Framework
+{
+   public class IsOptionalAttribute : Attribute
+   {
+      public override string ToString()
+      {
+         return "Is Optional";
+      }
+   } 
+}
