@@ -111,24 +111,20 @@ namespace OkonkwoETrade10.REST
             Version = "1.0",
             ConsumerKey = Credentials.consumerKey,
             ConsumerSecret = Credentials.consumerSecret,
-            RequestTokenUrl = $"{GetServer(EServer.OAuth)}request_token",
-            AuthorizeTokenUrl = GetServer(EServer.Authorize),
-            AccessTokenUrl = $"{GetServer(EServer.OAuth)}access_token"
+            //RequestTokenUrl = $"{GetServer(EServer.OAuth)}request_token",
+            //AuthorizeTokenUrl = GetServer(EServer.Authorize),
+            //AccessTokenUrl = $"{GetServer(EServer.OAuth)}access_token",
+            //RenewAccessTokenUrl = $"{GetServer(EServer.OAuth)}renew_access_token",
+            //RevokeAccessTokenUrl = $"{GetServer(EServer.OAuth)}revoke_access_token"
          };
 
          OAuthSvc = new ETradeOAuth10(oauthConfig);
 
          await GetRequestTokenAsync();
          //
-
          var authorizeResponse = await AuthorizeApplicationAsync();
          //
-
-         var accessTokenParameters = new AccessTokenParameters()
-         {
-            oauth_verifier = authorizeResponse.oauth_verifier
-         };
-         await GetAccessTokenAsync(accessTokenParameters);
+         await GetAccessTokenAsync(authorizeResponse.oauth_verifier);
       }
       #endregion
 
@@ -393,7 +389,7 @@ namespace OkonkwoETrade10.REST
       /// <param name="uri">The uri of the remote service</param>
       /// <param name="method">The Http verb for the request</param>
       /// <returns>An HttpWebRequest object</returns>
-      private static HttpWebRequest CreateHttpRequest(string uri, WebHeaderCollection headers, HttpMethod httpMethod)
+      private static HttpWebRequest CreateHttpRequest(string uri, WebHeaderCollection headers, string httpMethod)
       {
          var request = WebRequest.CreateHttp(uri);
          request.Headers.Add(headers ?? new WebHeaderCollection());
@@ -407,13 +403,13 @@ namespace OkonkwoETrade10.REST
                { "realm", "" }
             };
 
-            string authHeader = OAuthSvc.GetOAuthHeaderValue(httpMethod, uri, parameters);
-            request.Headers[HttpRequestHeader.Authorization] = $"OAuth {authHeader}";
+            string authHeaderValue = OAuthSvc.GetOAuthHeaderValue(new HttpMethod(httpMethod), uri, parameters);
+            request.Headers[HttpRequestHeader.Authorization] = $"OAuth {authHeaderValue}";
          }
 
          request.Headers[HttpRequestHeader.AcceptEncoding] = "gzip, deflate";
 
-         request.Method = httpMethod.Method;
+         request.Method = httpMethod;
          request.ContentType = request.ContentType ?? "application/json";
 
          return request;

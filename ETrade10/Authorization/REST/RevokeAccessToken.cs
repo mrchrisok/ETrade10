@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using OkonkwoETrade10.Authorization.OkonkwoOAuth;
@@ -8,26 +9,56 @@ namespace OkonkwoETrade10.REST
    public partial class ETrade10
    {
       /// <summary>
-      /// This method revokes an access token that was granted for the consumer key. 
-      /// Once the token is revoked, it no longer grants access to E*TRADE data. 
-      /// We strongly recommend revoking the access token once your application no longer needs access to 
-      /// the user’s E*TRADE account. 
-      /// In the event of a security compromise, a revoked token is useless to a malicious entity.
-      /// https://apisb.etrade.com/docs/api/authorization/revoke_access_token.html
+      /// Revokes an OAuth access token.
+      /// https://apisb.etrade.com/docs/api/authorization/renew_access_token.html
       /// </summary>
       /// <param name="requestTokenInfo"></param>
       /// <param name="verifier"></param>
       /// <returns>an access token</returns>
-      protected async Task<AccessTokenInfo> RevokeAccessTokenAsync(RequestTokenInfo requestTokenInfo, string verifier)
+      protected async Task RevokeAccessTokenAsync()
       {
          try
          {
-            return await OAuthSvc.GetAccessTokenAsync(HttpMethod.Get, requestTokenInfo.oauth_token, requestTokenInfo.oauth_token_secret, verifier);
+            var tokenParameters = new OAuthParameters()
+            {
+               HttpMethod = HttpMethod.Get,
+               Url = $"{GetServer(EServer.OAuth)}revoke_access_token",
+               Binding = OAuthParametersBinding.Header,
+               Values = new Dictionary<string, string>
+               {
+                  { "oauth_token", Credentials.RequestToken.oauth_token },
+                  { "oauth_token_secret", Credentials.RequestToken.oauth_token_secret }
+               }
+            };
+
+            var accessTokenInfo = await OAuthSvc.GetAccessTokenAsync(tokenParameters);
+
+            Credentials.AccessToken = null;
          }
          catch (Exception ex)
          {
-            throw new Exception("RevokeAccessTokenAsync failed: ", ex);
+            throw new Exception("RenewAccessTokenAsync failed: ", ex);
          }
       }
+
+      public class RevokeAccessTokenParameters
+      {
+
+      }
+   }
+
+   /// <summary>
+   /// The GET success response
+   /// </summary>
+   public class RevokeAccessTokenResponse : AccessTokenResponse
+   {
+   }
+
+   /// <summary>
+   /// The GET success response
+   /// </summary>
+   public class RevokeAccessTokenErrorResponse : AccessTokenErrorResponse
+   {
+
    }
 }

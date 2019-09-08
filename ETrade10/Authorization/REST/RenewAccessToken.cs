@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using OkonkwoETrade10.Authorization.OkonkwoOAuth;
@@ -14,16 +15,54 @@ namespace OkonkwoETrade10.REST
       /// <param name="requestTokenInfo"></param>
       /// <param name="verifier"></param>
       /// <returns>an access token</returns>
-      protected async Task<AccessTokenInfo> RenewAccessTokenAsync(RequestTokenInfo requestTokenInfo, string verifier)
+      protected async Task RenewAccessTokenAsync()
       {
          try
          {
-            return await OAuthSvc.GetAccessTokenAsync(HttpMethod.Get, requestTokenInfo.oauth_token, requestTokenInfo.oauth_token_secret, verifier);
+            var tokenParameters = new OAuthParameters()
+            {
+               HttpMethod = HttpMethod.Get,
+               Url = $"{GetServer(EServer.OAuth)}renew_access_token",
+               Binding = OAuthParametersBinding.Header,
+               Values = new Dictionary<string, string>
+               {
+                  { "oauth_token", Credentials.RequestToken.oauth_token },
+                  { "oauth_token_secret", Credentials.RequestToken.oauth_token_secret }
+               }
+            };
+
+            var accessTokenInfo = await OAuthSvc.GetAccessTokenAsync(tokenParameters);
+
+            Credentials.AccessToken = new RenewAccessTokenResponse()
+            {
+               oauth_token = accessTokenInfo.oauth_token,
+               oauth_token_secret = accessTokenInfo.oauth_token_secret
+            };
          }
          catch (Exception ex)
          {
             throw new Exception("RenewAccessTokenAsync failed: ", ex);
          }
       }
+
+      public class RenewAccessTokenParameters
+      {
+
+      }
+   }
+
+   /// <summary>
+   /// The GET success response
+   /// </summary>
+   public class RenewAccessTokenResponse : AccessTokenResponse
+   {
+   }
+
+   /// <summary>
+   /// The GET success response
+   /// </summary>
+   public class RenewAccessTokenErrorResponse : AccessTokenErrorResponse
+   {
+
    }
 }

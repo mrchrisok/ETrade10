@@ -1,7 +1,8 @@
 ﻿using System;
-using System.Net;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using OkonkwoETrade10.Authorization.OkonkwoOAuth;
 
 namespace OkonkwoETrade10.REST
 {
@@ -14,46 +15,36 @@ namespace OkonkwoETrade10.REST
       /// <param name="requestTokenInfo"></param>
       /// <param name="verifier"></param>
       /// <returns>an access token</returns>
-      protected async Task GetAccessTokenAsync(AccessTokenParameters parameters)
+      protected async Task GetAccessTokenAsync(string oauth_verifier)
       {
          try
          {
-            string requestToken = Credentials.RequestToken.oauth_token;
-            string requestTokenSecret = Credentials.RequestToken.oauth_token_secret;
-            string verifier = parameters.oauth_verifier;
-
-            string accessRequestHeaderValue = OAuthSvc.GetAccessRequestHeaderValue(HttpMethod.Get, requestToken, requestTokenSecret, verifier);
-            var headers = new WebHeaderCollection
+            var tokenParameters = new OAuthParameters()
             {
-               { HttpRequestHeader.Authorization, $"OAuth {accessRequestHeaderValue}" }
+               HttpMethod = HttpMethod.Get,
+               Url = $"{GetServer(EServer.OAuth)}access_token",
+               Binding = OAuthParametersBinding.Header,
+               Values = new Dictionary<string, string>
+               {
+                  { "oauth_callback", "oob" },
+                  { "oauth_token", Credentials.RequestToken.oauth_token },
+                  { "oauth_token_secret", Credentials.RequestToken.oauth_token_secret },
+                  { "oauth_verifier", oauth_verifier }
+               }
             };
 
-            var response = await MakeRequestAsync<AccessTokenResponse, AccessTokenErrorResponse>(GetServer(EServer.OAuth), "GET", headers);
+            var accessTokenInfo = await OAuthSvc.GetAccessTokenAsync(tokenParameters);
 
-            Credentials.AccessToken = response;
-
-            //return response;
-
-            //var accessTokenResponse = await OAuthSvc.GetAccessTokenAsync(requestToken, requestTokenSecret, verifier);
-
-            //Credentials.AccessToken = new AccessTokenResponse()
-            //{
-            //   oauth_token = accessTokenResponse.AccessToken,
-            //   oauth_token_secret = accessTokenResponse.AccessTokenSecret
-            //};
+            Credentials.AccessToken = new AccessTokenResponse()
+            {
+               oauth_token = accessTokenInfo.oauth_token,
+               oauth_token_secret = accessTokenInfo.oauth_token_secret
+            };
          }
          catch (Exception ex)
          {
             throw new Exception("GetAccessTokenAsync failed: ", ex);
          }
-      }
-
-      public class AccessTokenParameters
-      {
-         /// <summary>
-         /// The code received by the user to authenticate with the third-party application.
-         /// </summary>
-         public string oauth_verifier { get; set; }
       }
    }
 

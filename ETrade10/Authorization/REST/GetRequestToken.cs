@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using OkonkwoETrade10.Authorization.OkonkwoOAuth;
 
 namespace OkonkwoETrade10.REST
 {
@@ -16,13 +17,21 @@ namespace OkonkwoETrade10.REST
       {
          try
          {
-            var requestTokenInfo = await OAuthSvc.GetRequestTokenAsync(HttpMethod.Get, new List<string>() { "oauth_callback=oob" });
+            var tokenParameters = new OAuthParameters()
+            {
+               HttpMethod = HttpMethod.Get,
+               Url = $"{GetServer(EServer.OAuth)}request_token",
+               Binding = OAuthParametersBinding.Header,
+               Values = new Dictionary<string, string>() { { "oauth_callback", "oob" } }
+            };
+
+            var requestTokenInfo = await OAuthSvc.GetRequestTokenAsync(tokenParameters);
 
             Credentials.RequestToken = new RequestTokenResponse()
             {
                oauth_token = requestTokenInfo.oauth_token,
                oauth_token_secret = requestTokenInfo.oauth_token_secret,
-               oauth_callback_confirmed = false
+               oauth_callback_confirmed = requestTokenInfo.oauth_callback_confirmed
             };
          }
          catch (Exception ex)

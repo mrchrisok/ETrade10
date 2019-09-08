@@ -1,6 +1,4 @@
-﻿using System.Net.Http;
-
-namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
+﻿namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
 {
    public class OAuthConfig
    {
@@ -8,12 +6,12 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       public string ConsumerKey { get; set; }
       public string ConsumerSecret { get; set; }
       //
-      public string RequestTokenUrl { get; set; }
-      public HttpMethod RequestTokenMethod { get; set; }
+      //public string RequestTokenUrl { get; set; }
+      //public HttpMethod RequestTokenMethod { get; set; }
       //
-      public string AuthorizeTokenUrl { get; set; }
+      //public string AuthorizeTokenUrl { get; set; }
       //
-      public string AccessTokenUrl { get; set; }
-      public HttpMethod AccessTokenMethod { get; set; }
+      //public string AccessTokenUrl { get; set; }
+      //public HttpMethod AccessTokenMethod { get; set; }
    }
 }

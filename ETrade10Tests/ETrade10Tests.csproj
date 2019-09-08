@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ETrade01\ETrade10.csproj" />
+    <ProjectReference Include="..\ETrade10\ETrade10.csproj" />
   </ItemGroup>
 
 </Project>

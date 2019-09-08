@@ -2,7 +2,7 @@
 {
    public class RequestTokenInfo : TokenInfo
    {
-      public string oauth_callback_confirmed { get; set; }
+      public bool oauth_callback_confirmed { get; set; }
    }
 
    public class AccessTokenInfo : TokenInfo

@@ -38,8 +38,6 @@ namespace OkonkwoETrade10Tests
       protected static ETrade10 m_ETrade10;
       #endregion
 
-
-
       [ClassInitialize]
       public static void RunApiOperations(TestContext context)
       {

@@ -7,10 +7,10 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
 {
    public interface IOkonkwoOAuth
    {
-      Task<RequestTokenInfo> GetRequestTokenAsync(HttpMethod httpMethod, List<string> additionalParameters = null);
-      Task<AccessTokenInfo> GetAccessTokenAsync(HttpMethod httpMethod, string requestToken, string requestTokenSecret, string verifier);
-      string GetAuthorizationUrl(string requestToken, string callbackUrl = null);
-      AuthenticationHeaderValue GetOAuthHeader(HttpMethod httpMethod, string accessToken, string accessTokenSecret, string url, string realm);
-      string GetOAuthHeaderValue(HttpMethod httpMethod, string accessToken, string accessTokenSecret, string url, string realm);
+      Task<RequestTokenInfo> GetRequestTokenAsync(OAuthParameters parameters);
+      Task<AccessTokenInfo> GetAccessTokenAsync(OAuthParameters parameters);
+      string GetAuthorizationUrl(OAuthParameters parameters);
+      AuthenticationHeaderValue GetOAuthHeader(HttpMethod httpMethod, string url, Dictionary<string, string> parameters);
+      string GetOAuthHeaderValue(HttpMethod httpMethod, string url, Dictionary<string, string> parameters);
    }
 }

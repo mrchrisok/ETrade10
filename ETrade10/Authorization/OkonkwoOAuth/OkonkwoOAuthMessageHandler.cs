@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,8 +21,13 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
 
       protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
       {
-         var authorizationHeader = _tinyOAuth.GetOAuthHeader(request.Method, _accessToken, _accessTokenSecret, request.RequestUri.AbsoluteUri);
-         request.Headers.Authorization = authorizationHeader;
+         var parameters = new Dictionary<string, string>
+         {
+            { "oauth_token", _accessToken },
+            { "oauth_token_secret", _accessTokenSecret }
+         };
+
+         request.Headers.Authorization = _tinyOAuth.GetOAuthHeader(request.Method, request.RequestUri.AbsoluteUri, parameters);
 
          //
          return base.SendAsync(request, cancellationToken);

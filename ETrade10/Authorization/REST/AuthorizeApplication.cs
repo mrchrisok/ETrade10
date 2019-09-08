@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using OkonkwoETrade10.Authorization.OkonkwoOAuth;
 using OpenQA.Selenium;
 
 namespace OkonkwoETrade10.REST
@@ -18,12 +20,20 @@ namespace OkonkwoETrade10.REST
       {
          return await Task.Run(() =>
          {
+            var parameters = new OAuthParameters()
+            {
+               HttpMethod = HttpMethod.Get,
+               Url = GetServer(EServer.Authorize),
+               Binding = OAuthParametersBinding.QueryString,
+               Values = new Dictionary<string, string>() { { "oauth_token", Credentials.RequestToken.oauth_token } }
+            };
+
             using (WebDriver)
             {
                try
                {
                   // login to account
-                  WebDriver.Navigate().GoToUrl(OAuthSvc.GetAuthorizationUrl(Credentials.RequestToken.oauth_token));
+                  WebDriver.Navigate().GoToUrl(OAuthSvc.GetAuthorizationUrl(parameters));
                   FindDriverElement("input", name: "USER").SendKeys(Credentials.userName);
                   FindDriverElement("input", name: "PASSWORD").SendKeys(Credentials.password);
                   var whiteListCookie = new Cookie(Credentials.consumerCookie.Key, Credentials.consumerCookie.Value);
@@ -39,7 +49,7 @@ namespace OkonkwoETrade10.REST
                }
                catch (Exception ex)
                {
-                  throw new ApplicationException("AuthorizeApplicationAsync failed: ", ex);
+                  throw new Exception("AuthorizeApplicationAsync failed: ", ex);
                }
             }
          });
@@ -81,7 +91,7 @@ namespace OkonkwoETrade10.REST
          }
 
          string elementNotFoundMessage = $"Unique element (tagName: {tagName}, id: {id}, name: {name}, value: {value}) not found.";
-         throw new ApplicationException(elementNotFoundMessage);
+         throw new Exception(elementNotFoundMessage);
       }
    }
 

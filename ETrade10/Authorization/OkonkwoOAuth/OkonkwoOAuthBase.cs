@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -11,57 +12,25 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
    public abstract class OkonkwoOAuthBase : IOkonkwoOAuth
    {
       protected readonly OAuthConfig _config;
+      protected bool _isAuthorized;
 
       public OkonkwoOAuthBase(OAuthConfig config)
       {
          _config = config;
       }
 
-      #region get request token
-
       /// <summary>
       /// 6.1.1. Consumer Obtains a Request Token (https://oauth.net/core/1.0a/)
       /// </summary>
       /// <param name="httpMethod"></param>
+      /// <param name="additionalParameters"></param>
       /// <returns></returns>
-      public virtual async Task<RequestTokenInfo> GetRequestTokenAsync(HttpMethod httpMethod, Dictionary<string, string> additionalParameters = null)
+      public virtual async Task<RequestTokenInfo> GetRequestTokenAsync(OAuthParameters parameters)
       {
-         var parameters = GetOAuthRequestParameters(additionalParameters);
+         parameters.Values = GetOAuthRequestParameters(parameters.Values);
 
-         string signatureBaseString = GetSignatureBaseString(httpMethod, _config.RequestTokenUrl, parameters);
-         //
-         string signature = GetSignature(signatureBaseString, _config.ConsumerSecret);
-         parameters.Add("oauth_signature", Uri.EscapeDataString(signature));
-
-         string responseText = "";
-
-         if (httpMethod == HttpMethod.Post)
-            responseText = await GetRequestTokenByPostAsync(parameters);
-         else if (httpMethod == HttpMethod.Get)
-            responseText = await GetRequestTokenByPostAsync(parameters);
-         else
-            throw new NotImplementedException($"GetRequestTokenAsync by method: {httpMethod.Method} is not implemented.");
-
-         return GetTokenInfo<RequestTokenInfo>(responseText);
+         return await SendTokenRequestAsync<RequestTokenInfo>("get-request", parameters);
       }
-
-      protected virtual async Task<string> GetRequestTokenByPostAsync(Dictionary<string, string> parameters)
-      {
-         string oauthHeader = GetOAuthHeaderValue(HttpMethod.Get, _config.RequestTokenUrl, parameters);
-         string postData = ConcatParameterList(parameters, "&") + "&oauth_signature=" + Uri.EscapeDataString(signature);
-         return await PostOAuthData(_config.RequestTokenUrl, postData);
-      }
-
-      protected virtual async Task<string> GetRequestTokenByGetAsync(Dictionary<string, string> parameters)
-      {
-         string oauthHeader = GetOAuthHeaderValue(HttpMethod.Get, _config.RequestTokenUrl, parameters);
-         string postData = ConcatParameterList(parameters, "&") + "&oauth_signature=" + Uri.EscapeDataString(signature);
-         return await PostOAuthData(_config.RequestTokenUrl, postData);
-      }
-
-      #endregion
-
-      #region get access token
 
       /// <summary>
       /// OAuth - 6.3.1. Consumer Requests an Access Token
@@ -70,121 +39,111 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       /// <param name="requestTokenSecret"></param>
       /// <param name="verifier"></param>
       /// <returns></returns>
-      public virtual async Task<AccessTokenInfo> GetAccessTokenAsync(HttpMethod httpMethod, string requestToken, string requestTokenSecret, string verifier)
+      public virtual async Task<AccessTokenInfo> GetAccessTokenAsync(OAuthParameters parameters)
       {
-         string nonce = GetNonce();
-         string timeStamp = GetTimeStamp();
+         parameters.Values = GetOAuthRequestParameters(parameters.Values);
 
-         var requestParameters = new List<string>
-         {
-            "oauth_consumer_key=" + _config.ConsumerKey,
-            "oauth_token=" + requestToken,
-            "oauth_signature_method=HMAC-SHA1",
-            "oauth_timestamp=" + timeStamp,
-            "oauth_nonce=" + nonce,
-            "oauth_version=1.0",
-            "oauth_verifier=" + verifier
-         };
+         var accessToken = await SendTokenRequestAsync<AccessTokenInfo>("get-access", parameters);
 
-         string signatureBaseString = GetSignatureBaseString(httpMethod, _config.AccessTokenUrl, requestParameters);
-         string signature = GetSignature(signatureBaseString, _config.ConsumerSecret, requestTokenSecret);
+         _isAuthorized = true;
 
-         string postData = $"{ConcatParameterList(requestParameters, "&")}&oauth_signature={Uri.EscapeDataString(signature)}";
-
-         string responseText = await PostOAuthData(_config.AccessTokenUrl, postData);
-
-         if (!responseText.ToLowerInvariant().Contains("oauth_token"))
-            throw new Exception(@"An error occured when trying to retrieve access token, the response was: """ + responseText +
-                           @"""" + Environment.NewLine + Environment.NewLine +
-                           "Did you remember to navigate to and complete the authorization page?");
-
-         return GetTokenInfo<AccessTokenInfo>(responseText);
+         return accessToken;
       }
 
-      #endregion
+      public virtual async Task<T> SendTokenRequestAsync<T>(string tokenAction, OAuthParameters parameters) where T : TokenInfo, new()
+      {
+         if (!(parameters.HttpMethod.Equals(HttpMethod.Get) || parameters.HttpMethod.Equals(HttpMethod.Post)))
+            throw new NotImplementedException($"GetRequestTokenAsync by method: {parameters.HttpMethod.Method} is not implemented.");
+
+         // build parameters
+         var requestParameters = parameters.Values;
+         if (requestParameters.TryGetValue("oauth_token_secret", out string oauth_token_secret))
+            requestParameters.Remove("oauth_token_secret");
+
+         string signatureBaseString = GetSignatureBaseString(parameters.HttpMethod, parameters.Url, requestParameters);
+         string signature = GetSignature(signatureBaseString, _config.ConsumerSecret, oauth_token_secret);
+         requestParameters.Add("oauth_signature", Uri.EscapeDataString(signature));
+
+         var requestUrl = parameters.Binding == OAuthParametersBinding.QueryString
+            ? $"{parameters.Url}?{ConcatParameterList(requestParameters, "&", quotedValues: true)}"
+            : parameters.Url;
+
+         var oauthHeader = parameters.Binding == OAuthParametersBinding.Header
+            ? GetOAuthHeader(parameters.HttpMethod, parameters.Url, requestParameters)
+            : null;
+
+         var postData = parameters.Binding == OAuthParametersBinding.Body
+            ? $"{ConcatParameterList(requestParameters, "&", quotedValues: true)}"
+            : null;
+
+         string responseText = await SendOAuthDataAsync(parameters.HttpMethod, requestUrl, oauthHeader, postData);
+
+         if (!responseText.ToLowerInvariant().Contains("oauth_token"))
+         {
+            var builder = new StringBuilder($"An error occured when trying to {tokenAction.Split('-')[0]} {tokenAction.Split('-')[1]} token.");
+            builder.Append($"The response was: >> { responseText} <<\n\n");
+            throw new Exception(builder.ToString());
+         }
+
+         return GetTokenInfo<T>(responseText);
+      }
 
       /// <summary>
-      /// 
+      /// 6.2.1. Consumer Directs the User to the Service Provider
       /// </summary>
-      /// <param name="requestToken"></param>
-      /// <param name="callbackUrl">a URL the Service Provider will use to redirect the User back to the Consumer when Obtaining User Authorization is complete</param>
+      /// <param name="parameters"></param>
       /// <returns></returns>
-      public virtual string GetAuthorizationUrl(string requestToken, string callbackUrl = null)
+      public virtual string GetAuthorizationUrl(OAuthParameters parameters)
       {
-         string authorizeTokenUrl = _config.AuthorizeTokenUrl.TrimEnd('/');
+         string authorizeTokenUrl = parameters.Url.TrimEnd('/');
+         string requestToken = parameters.Values["oauth_token"];
 
-         string authorzationUrl = Uri.UnescapeDataString($"{authorizeTokenUrl}?oauth_token={requestToken}");
+         string authorzationUrl = Uri.UnescapeDataString($"{authorizeTokenUrl}?oauth_consumer_key={_config.ConsumerKey}&oauth_token={requestToken}");
 
-         if (!string.IsNullOrEmpty(callbackUrl))
-            authorzationUrl += $"&oauth_callback={callbackUrl}";
+         if (parameters.Values.TryGetValue("oauth_callback", out string oauth_callback))
+            authorzationUrl += $"&oauth_callback={oauth_callback}";
 
          return authorzationUrl;
       }
 
-      public AuthenticationHeaderValue GetOAuthHeader(HttpMethod httpMethod, string token, string tokenSecret, string url, string realm = "")
+      public AuthenticationHeaderValue GetOAuthHeader(HttpMethod httpMethod, string url, Dictionary<string, string> parameters)
       {
-         return new AuthenticationHeaderValue("OAuth", GetOAuthHeaderValue(httpMethod, token, tokenSecret, url, realm));
-      }
-
-      protected void LoadQueryStringParameters(string url, Dictionary<string, string> parameters)
-      {
-         var requestUri = new Uri(url, UriKind.Absolute);
-         if (!string.IsNullOrWhiteSpace(requestUri.Query))
-         {
-            // extract non "oauth_" parameters from queryString
-            var queryStringParameters = GetQueryStringParameters(requestUri.Query);
-
-            foreach (var parameter in queryStringParameters)
-               parameters.Add(parameter.Key, parameter.Value);
-         }
+         return new AuthenticationHeaderValue("OAuth", GetOAuthHeaderValue(httpMethod, url, parameters));
       }
 
       /// <summary>
       /// OAuth 5.4.1 - Authorization Header
       /// </summary>
       /// <param name="httpMethod"></param>
-      /// <param name="token"></param>
-      /// <param name="tokenSecret"></param>
       /// <param name="url"></param>
+      /// <param name="parameters"></param>
       /// <returns></returns>
       public string GetOAuthHeaderValue(HttpMethod httpMethod, string url, Dictionary<string, string> parameters)
       {
-         string token = parameters["oauth_token"];
-         string tokenSecret = parameters["oauth_token_secret"];
-         string realm = parameters["realm"];
+         LoadQueryStringParameters(url, loadIntoDict: parameters);
 
-         var additionalParameters = new Dictionary<string, string>();
-
-         if (!string.IsNullOrEmpty(token))
-            additionalParameters.Add("oauth_token", token);
-
-         LoadQueryStringParameters(url, additionalParameters);
-
-         var requestParameters = GetOAuthRequestParameters(additionalParameters);
-
-         string signatureBaseString = GetSignatureBaseString(httpMethod, url, requestParameters);
-         string signature = GetSignature(signatureBaseString, _config.ConsumerSecret, tokenSecret);
-
-         // wrap the parameter values with quotes
-         var headerParameters = new List<string>()
+         if (!parameters.ContainsKey("oauth_signature"))
          {
-            $"realm=\"{realm ?? GetRealm(url)}\"", $"oauth_signature=\"{Uri.EscapeDataString(signature)}\""
-         };
-         foreach (var parameter in requestParameters)
-            headerParameters.Add($"{parameter.Key}=\"{parameter.Value}\"");
+            parameters.TryGetValue("oauth_token_secret", out string oauth_token_secret);
+            //
+            string signatureBaseString = GetSignatureBaseString(httpMethod, url, parameters);
+            string signature = GetSignature(signatureBaseString, _config.ConsumerSecret, oauth_token_secret);
+            parameters.Add("oauth_signature", Uri.EscapeDataString(signature));
+         }
 
-         return ConcatParameterList(headerParameters, ",");
+         parameters.TryGetValue("realm", out string realm);
+
+         return $"realm=\"{realm ?? ""}\",{ConcatParameterList(parameters, ",", quotedValues: true)}";
       }
 
       /// <summary>
       /// OAuth 6 - Authenticating with OAuth
       /// </summary>
-      /// <param name="additionalParameters"></param>
-      /// <param name="addVersion"></param>
+      /// <param name="requestParameters"></param>
       /// <returns></returns>
-      protected virtual Dictionary<string, string> GetOAuthRequestParameters(Dictionary<string, string> additionalParameters = null)
+      protected virtual Dictionary<string, string> GetOAuthRequestParameters(Dictionary<string, string> requestParameters = null)
       {
-         var requestParameters = new Dictionary<string, string>
+         var oauthParameters = new Dictionary<string, string>
          {
             { "oauth_consumer_key", _config.ConsumerKey },
             { "oauth_signature_method", "HMAC-SHA1" },
@@ -193,7 +152,10 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
             { "oauth_version", _config.Version }
          };
 
-         foreach (var parameter in additionalParameters)
+         if (requestParameters == null)
+            return oauthParameters;
+
+         foreach (var parameter in oauthParameters)
             if (!requestParameters.ContainsKey(parameter.Key))
                requestParameters.Add(parameter.Key, parameter.Value);
 
@@ -211,12 +173,6 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
          return Convert.ToInt64(timeStamp.TotalSeconds).ToString();
       }
 
-      protected virtual string GetRealm(string url)
-      {
-         var uri = new Uri(url, UriKind.Absolute);
-         return $"{uri.Scheme}://{uri.Host}";
-      }
-
       /// <summary>
       /// OAuth 9.1 - Generating Signature Base String
       /// </summary>
@@ -227,11 +183,9 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       protected virtual string GetSignatureBaseString(HttpMethod httpMethod, string requestUrl, Dictionary<string, string> requestParameters)
       {
          // 9.1.1
-         var sortedParameterList = new List<string>();
-         foreach (var parameter in requestParameters)
-            sortedParameterList.Add($"{parameter.Key}={parameter.Value}");
-         sortedParameterList.Sort();
-         string normalizedParameters = ConcatParameterList(sortedParameterList, "&");
+         var signatureParameters = requestParameters.OrderBy(p => $"{p.Key}={p.Value}")
+                                                    .ToDictionary(p => p.Key, p => p.Value);
+         string normalizedParameters = ConcatParameterList(signatureParameters, "&", quotedValues: false);
 
          // 9.1.2
          requestUrl = ConstructRequestUrl(requestUrl);
@@ -249,54 +203,28 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       /// <returns></returns>
       protected virtual string GetSignature(string signatureBaseString, string consumerSecret, string tokenSecret = null)
       {
-         string key = Uri.EscapeDataString(consumerSecret) + "&" + Uri.EscapeDataString(tokenSecret ?? "");
+         string getEscapedDataString(string stringData)
+         {
+            var splitStringData = stringData?.Split('%');
 
-         var hmacsha1 = new HMACSHA1 { Key = Encoding.ASCII.GetBytes(key) };
+            // this is a rudimentary check to see if stringData has already been escaped
+            // more sophisticated implementations can be implemented by overriding this method
+            if (splitStringData?.Length > 1)
+               if (splitStringData.Skip(1).ToArray().Any(data => data.Length >= 2))
+                  return stringData;
 
-         byte[] dataBuffer = Encoding.ASCII.GetBytes(signatureBaseString);
-         byte[] hashBytes = hmacsha1.ComputeHash(dataBuffer);
+            return Uri.EscapeDataString(stringData);
+         }
 
-         return Convert.ToBase64String(hashBytes);
+         string key = $"{getEscapedDataString(consumerSecret)}&{getEscapedDataString(tokenSecret ?? "")}";
 
-         // .NET Core implementation
-         // var signingKey = string.Format("{0}&{1}", consumerSecret, !string.IsNullOrEmpty(requestTokenSecret) ? requestTokenSecret : "");
-         // IBuffer keyMaterial = CryptographicBuffer.ConvertStringToBinary(signingKey, BinaryStringEncoding.Utf8);
-         // MacAlgorithmProvider hmacSha1Provider = MacAlgorithmProvider.OpenAlgorithm("HMAC_SHA1");
-         // CryptographicKey macKey = hmacSha1Provider.CreateKey(keyMaterial);
-         // IBuffer dataToBeSigned = CryptographicBuffer.ConvertStringToBinary(signatureBaseString, BinaryStringEncoding.Utf8);
-         // IBuffer signatureBuffer = CryptographicEngine.Sign(macKey, dataToBeSigned);
-         // String signature = CryptographicBuffer.EncodeToBase64String(signatureBuffer);
-         // return signature;
-      }
+         using (var hmacsha1 = new HMACSHA1 { Key = Encoding.ASCII.GetBytes(key) })
+         {
+            byte[] dataBuffer = Encoding.ASCII.GetBytes(signatureBaseString);
+            byte[] hashBytes = hmacsha1.ComputeHash(dataBuffer);
 
-      /// <summary>
-      /// Get non "oauth_" parameters from the queryString
-      /// </summary>
-      /// <param name="queryString"></param>
-      /// <returns></returns>
-      protected virtual Dictionary<string, string> GetQueryStringParameters(string queryString)
-      {
-         if (queryString.StartsWith("?"))
-            queryString = queryString.Remove(0, 1);
-
-         var queryParameters = new Dictionary<string, string>();
-
-         if (string.IsNullOrEmpty(queryString))
-            return queryParameters;
-
-         foreach (string parameter in queryString.Split('&'))
-            if (!string.IsNullOrEmpty(parameter) && !parameter.StartsWith("oauth_"))
-               if (parameter.IndexOf('=') > -1)
-               {
-                  string[] parameterParts = parameter.Split('=');
-                  queryParameters.Add(parameterParts[0], parameterParts[1]);
-               }
-               else
-               {
-                  queryParameters.Add(parameter, string.Empty);
-               }
-
-         return queryParameters;
+            return Convert.ToBase64String(hashBytes);
+         }
       }
 
       /// <summary>
@@ -315,64 +243,103 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
          return normUrl += uri.AbsolutePath;
       }
 
-      //protected virtual string GetNormalizedUrl(Uri uri)
-      //{
-      //   string normUrl = $"{uri.Scheme}://{uri.Host}";
-      //   if (!(uri.Scheme == "http" && uri.Port == 80 || uri.Scheme == "https" && uri.Port == 443))
-      //      normUrl += ":" + uri.Port;
-
-      //   return normUrl += uri.AbsolutePath;
-      //}
-
       /// <summary>
       /// OAuth 9.1.1 - Normalize Request Parameters
       /// </summary>
       /// <param name="parameters"></param>
       /// <param name="delimiter"></param>
       /// <returns></returns>
-      protected virtual string ConcatParameterList(IEnumerable<string> parameters, string delimiter)
+      protected virtual string ConcatParameterList(Dictionary<string, string> parameters, string delimiter, bool quotedValues = false)
       {
          var stringBuilder = new StringBuilder();
-         foreach (string parameter in parameters)
+         string escapedQuote = quotedValues ? "\"" : null;
+
+         foreach (var parameter in parameters)
          {
             if (stringBuilder.Length > 0)
                stringBuilder.Append(delimiter);
 
-            stringBuilder.Append(parameter);
+            stringBuilder.Append($"{parameter.Key}={escapedQuote}{ parameter.Value}{escapedQuote}");
+
          }
          return stringBuilder.ToString().TrimEnd(delimiter.ToCharArray());
       }
 
-      protected virtual async Task<string> PostOAuthData(string url, string postData, Dictionary<string, string> headers = null)
+      /// <summary>
+      /// Extracts and loads non "oauth_" parameters from queryString into a dictionary
+      /// </summary>
+      /// <param name="url"></param>
+      /// <param name="parameters"></param>
+      protected void LoadQueryStringParameters(string url, Dictionary<string, string> loadIntoDict)
+      {
+         var requestUri = new Uri(url, UriKind.Absolute);
+
+         if (!string.IsNullOrWhiteSpace(requestUri.Query))
+            foreach (string parameter in requestUri.Query.Split('&'))
+               if (!string.IsNullOrEmpty(parameter) && !parameter.StartsWith("oauth_"))
+                  if (parameter.IndexOf('=') > -1)
+                  {
+                     string[] parameterParts = parameter.Split('=');
+                     loadIntoDict.Add(parameterParts[0], parameterParts[1]);
+                  }
+                  else
+                  {
+                     loadIntoDict.Add(parameter, string.Empty);
+                  }
+      }
+
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <param name="httpMethod"></param>
+      /// <param name="url"></param>
+      /// <param name="postData"></param>
+      /// <param name="authHeader"></param>
+      /// <returns></returns>
+      protected virtual async Task<string> SendOAuthDataAsync(HttpMethod httpMethod, string url, AuthenticationHeaderValue authHeader, string postData)
       {
          try
          {
-            var httpClient = new HttpClient { MaxResponseContentBufferSize = int.MaxValue };
-            httpClient.DefaultRequestHeaders.ExpectContinue = false;
-
-            var requestMsg = new HttpRequestMessage
+            using (var httpClient = new HttpClient { MaxResponseContentBufferSize = int.MaxValue })
             {
-               Content = new StringContent(postData),
-               Method = new HttpMethod("POST"),
-               RequestUri = new Uri(url, UriKind.Absolute)
-            };
-            requestMsg.Content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
+               httpClient.DefaultRequestHeaders.ExpectContinue = false;
+               httpClient.DefaultRequestHeaders.Authorization = authHeader;
 
-            var response = await httpClient.SendAsync(requestMsg);
-            return await response.Content.ReadAsStringAsync();
+               var requestMsg = new HttpRequestMessage()
+               {
+                  Method = httpMethod,
+                  RequestUri = new Uri(url, UriKind.Absolute)
+               };
+
+               if (httpMethod.Equals(HttpMethod.Post))
+               {
+                  requestMsg.Content = new StringContent(postData);
+                  requestMsg.Content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
+               }
+
+               var response = await httpClient.SendAsync(requestMsg);
+               return await response.Content.ReadAsStringAsync();
+            }
          }
          catch (Exception ex)
          {
             throw ex;
          }
       }
+
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <typeparam name="T"></typeparam>
+      /// <param name="responseText"></param>
+      /// <returns></returns>
       protected T GetTokenInfo<T>(string responseText) where T : TokenInfo, new()
       {
          if (!string.IsNullOrEmpty(responseText))
          {
             string oauthToken = null;
             string oauthTokenSecret = null;
-            //string oauthAuthorizeUrl = null;
+            string oauthCallbackConfirmed = null;
 
             string[] keyValPairs = responseText.Split('&');
 
@@ -387,21 +354,21 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
                   case "oauth_token_secret":
                      oauthTokenSecret = splits[1];
                      break;
-                     // TODO: Handle this one?
-                     //case "xoauth_request_auth_url":
-                     //	oauthAuthorizeUrl = splits[1];
-                     //	break;
+                  case "oauth_callback_confirmed":
+                     oauthCallbackConfirmed = splits[1];
+                     break;
                }
             }
 
-            return new T()
-            {
-               oauth_token = oauthToken,
-               oauth_token_secret = oauthTokenSecret
-            };
+            var tokenInfo = new T() { oauth_token = oauthToken, oauth_token_secret = oauthTokenSecret };
+
+            if (tokenInfo is RequestTokenInfo requestTokenInfo)
+               requestTokenInfo.oauth_callback_confirmed = Convert.ToBoolean(oauthCallbackConfirmed);
+
+            return tokenInfo;
          }
 
-         throw new ApplicationException("Empty response text.");
+         throw new Exception("Empty response text.");
       }
    }
 }
