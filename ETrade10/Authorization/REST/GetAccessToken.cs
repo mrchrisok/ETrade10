@@ -21,6 +21,7 @@ namespace OkonkwoETrade10.REST
          {
             var tokenParameters = new OAuthParameters()
             {
+               TokenAction = "get-accesss",
                HttpMethod = HttpMethod.Get,
                Url = $"{GetServer(EServer.OAuth)}access_token",
                Binding = OAuthParametersBinding.Header,

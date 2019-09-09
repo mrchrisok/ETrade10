@@ -21,6 +21,7 @@ namespace OkonkwoETrade10.REST
          {
             var tokenParameters = new OAuthParameters()
             {
+               TokenAction = "revoke-access",
                HttpMethod = HttpMethod.Get,
                Url = $"{GetServer(EServer.OAuth)}revoke_access_token",
                Binding = OAuthParametersBinding.Header,

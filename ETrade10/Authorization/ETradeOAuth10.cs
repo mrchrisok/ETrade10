@@ -27,22 +27,24 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
          return parameters.Url;
       }
 
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <param name="parameters"></param>
+      /// <returns></returns>
       public virtual async Task<AccessTokenInfo> RenewAccessTokenAsync(OAuthParameters parameters)
       {
-         var accessTokenInfo = await SendTokenRequestAsync<AccessTokenInfo>("renew-access", parameters);
-
-         _isAuthorized = true;
-
-         return accessTokenInfo;
+         return await SendTokenRequestAsync<AccessTokenInfo>(parameters);
       }
 
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <param name="parameters"></param>
+      /// <returns></returns>
       public virtual async Task<AccessTokenInfo> RevokeAccessTokenAsync(OAuthParameters parameters)
       {
-         var accessTokenInfo = await SendTokenRequestAsync<AccessTokenInfo>("revoke-access", parameters);
-
-         _isAuthorized = false;
-
-         return accessTokenInfo;
+         return await SendTokenRequestAsync<AccessTokenInfo>(parameters);
       }
    }
 }

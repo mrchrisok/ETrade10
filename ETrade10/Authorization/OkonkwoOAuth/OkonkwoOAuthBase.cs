@@ -12,7 +12,6 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
    public abstract class OkonkwoOAuthBase : IOkonkwoOAuth
    {
       protected readonly OAuthConfig _config;
-      protected bool _isAuthorized;
 
       public OkonkwoOAuthBase(OAuthConfig config)
       {
@@ -29,7 +28,7 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       {
          parameters.Values = GetOAuthRequestParameters(parameters.Values);
 
-         return await SendTokenRequestAsync<RequestTokenInfo>("get-request", parameters);
+         return await SendTokenRequestAsync<RequestTokenInfo>(parameters);
       }
 
       /// <summary>
@@ -43,14 +42,10 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       {
          parameters.Values = GetOAuthRequestParameters(parameters.Values);
 
-         var accessToken = await SendTokenRequestAsync<AccessTokenInfo>("get-access", parameters);
-
-         _isAuthorized = true;
-
-         return accessToken;
+         return await SendTokenRequestAsync<AccessTokenInfo>(parameters);
       }
 
-      public virtual async Task<T> SendTokenRequestAsync<T>(string tokenAction, OAuthParameters parameters) where T : TokenInfo, new()
+      protected virtual async Task<T> SendTokenRequestAsync<T>(OAuthParameters parameters) where T : TokenInfo, new()
       {
          if (!(parameters.HttpMethod.Equals(HttpMethod.Get) || parameters.HttpMethod.Equals(HttpMethod.Post)))
             throw new NotImplementedException($"GetRequestTokenAsync by method: {parameters.HttpMethod.Method} is not implemented.");
@@ -80,7 +75,8 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
 
          if (!responseText.ToLowerInvariant().Contains("oauth_token"))
          {
-            var builder = new StringBuilder($"An error occured when trying to {tokenAction.Split('-')[0]} {tokenAction.Split('-')[1]} token.");
+            string[] tokenAction = parameters.TokenAction.Split('-');
+            var builder = new StringBuilder($"An error occured during the when trying to {tokenAction[0]} {tokenAction[1]} token.");
             builder.Append($"The response was: >> { responseText} <<\n\n");
             throw new Exception(builder.ToString());
          }
@@ -162,11 +158,19 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
          return requestParameters;
       }
 
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <returns></returns>
       protected virtual string GetNonce()
       {
          return new Random().Next(1000000000).ToString();
       }
 
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <returns></returns>
       protected virtual string GetTimeStamp()
       {
          var timeStamp = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0));
@@ -203,20 +207,7 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       /// <returns></returns>
       protected virtual string GetSignature(string signatureBaseString, string consumerSecret, string tokenSecret = null)
       {
-         string getEscapedDataString(string stringData)
-         {
-            var splitStringData = stringData?.Split('%');
-
-            // this is a rudimentary check to see if stringData has already been escaped
-            // more sophisticated implementations can be implemented by overriding this method
-            if (splitStringData?.Length > 1)
-               if (splitStringData.Skip(1).ToArray().Any(data => data.Length >= 2))
-                  return stringData;
-
-            return Uri.EscapeDataString(stringData);
-         }
-
-         string key = $"{getEscapedDataString(consumerSecret)}&{getEscapedDataString(tokenSecret ?? "")}";
+         string key = $"{GetEscapedDataString(consumerSecret)}&{GetEscapedDataString(tokenSecret ?? "")}";
 
          using (var hmacsha1 = new HMACSHA1 { Key = Encoding.ASCII.GetBytes(key) })
          {
@@ -262,7 +253,27 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
             stringBuilder.Append($"{parameter.Key}={escapedQuote}{ parameter.Value}{escapedQuote}");
 
          }
+
          return stringBuilder.ToString().TrimEnd(delimiter.ToCharArray());
+      }
+
+      /// <summary>
+      /// Returns the passed-in stringData as a uri/percent escaped string
+      /// If the stringData has already been escaped, the stringData will be returned unchanged.
+      /// </summary>
+      /// <param name="stringData"></param>
+      /// <returns></returns>
+      protected virtual string GetEscapedDataString(string stringData)
+      {
+         string[] splitStringData = stringData?.Split('%');
+
+         // this is a rudimentary check to see if stringData has already been escaped
+         // more sophisticated implementations can be implemented by overriding this method
+         if (splitStringData?.Length > 1)
+            if (splitStringData.Skip(1).ToArray().Any(data => data.Length >= 2))
+               return stringData;
+
+         return Uri.EscapeDataString(stringData);
       }
 
       /// <summary>
@@ -289,12 +300,12 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       }
 
       /// <summary>
-      /// 
+      /// Sends the oauth message to the oauth service
       /// </summary>
       /// <param name="httpMethod"></param>
       /// <param name="url"></param>
-      /// <param name="postData"></param>
       /// <param name="authHeader"></param>
+      /// <param name="postData"></param>
       /// <returns></returns>
       protected virtual async Task<string> SendOAuthDataAsync(HttpMethod httpMethod, string url, AuthenticationHeaderValue authHeader, string postData)
       {
@@ -328,10 +339,10 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       }
 
       /// <summary>
-      /// 
+      /// Get token info from response text
       /// </summary>
-      /// <typeparam name="T"></typeparam>
-      /// <param name="responseText"></param>
+      /// <typeparam name="T">Type of token info</typeparam>
+      /// <param name="responseText">Response text to extrace token info from</param>
       /// <returns></returns>
       protected T GetTokenInfo<T>(string responseText) where T : TokenInfo, new()
       {
