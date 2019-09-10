@@ -28,6 +28,17 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       }
 
       /// <summary>
+      /// OAuth1.0a - 6.2 - Obtaining User Authorization
+      /// </summary>
+      /// <returns></returns>
+      public override async Task<string> AuthorizeApplicationAsync()
+      {
+         //throw new System.NotImplementedException();
+
+         return await Task.FromResult("");
+      }
+
+      /// <summary>
       /// 
       /// </summary>
       /// <param name="parameters"></param>

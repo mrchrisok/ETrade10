@@ -19,7 +19,7 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       }
 
       /// <summary>
-      /// 6.1.1. Consumer Obtains a Request Token (https://oauth.net/core/1.0a/)
+      /// OAuth1.0a - 6.1.1. - Consumer Obtains a Request Token (https://oauth.net/core/1.0a/)
       /// </summary>
       /// <param name="httpMethod"></param>
       /// <param name="additionalParameters"></param>
@@ -32,7 +32,13 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       }
 
       /// <summary>
-      /// OAuth - 6.3.1. Consumer Requests an Access Token
+      /// OAuth1.0a - 6.2 - Obtaining User Authorization
+      /// </summary>
+      /// <returns></returns>
+      public abstract Task<string> AuthorizeApplicationAsync();
+
+      /// <summary>
+      /// OAuth1.0a - 6.3.1. - Consumer Requests an Access Token
       /// </summary>
       /// <param name="requestToken"></param>
       /// <param name="requestTokenSecret"></param>
@@ -45,12 +51,18 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
          return await SendTokenRequestAsync<AccessTokenInfo>(parameters);
       }
 
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <typeparam name="T"></typeparam>
+      /// <param name="parameters"></param>
+      /// <returns></returns>
       protected virtual async Task<T> SendTokenRequestAsync<T>(OAuthParameters parameters) where T : TokenInfo, new()
       {
          if (!(parameters.HttpMethod.Equals(HttpMethod.Get) || parameters.HttpMethod.Equals(HttpMethod.Post)))
             throw new NotImplementedException($"GetRequestTokenAsync by method: {parameters.HttpMethod.Method} is not implemented.");
+         //
 
-         // build parameters
          var requestParameters = parameters.Values;
          if (requestParameters.TryGetValue("oauth_token_secret", out string oauth_token_secret))
             requestParameters.Remove("oauth_token_secret");
@@ -59,7 +71,7 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
          string signature = GetSignature(signatureBaseString, _config.ConsumerSecret, oauth_token_secret);
          requestParameters.Add("oauth_signature", Uri.EscapeDataString(signature));
 
-         var requestUrl = parameters.Binding == OAuthParametersBinding.QueryString
+         string requestUrl = parameters.Binding == OAuthParametersBinding.QueryString
             ? $"{parameters.Url}?{ConcatParameterList(requestParameters, "&", quotedValues: true)}"
             : parameters.Url;
 
@@ -67,7 +79,7 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
             ? GetOAuthHeader(parameters.HttpMethod, parameters.Url, requestParameters)
             : null;
 
-         var postData = parameters.Binding == OAuthParametersBinding.Body
+         string postData = parameters.Binding == OAuthParametersBinding.Body
             ? $"{ConcatParameterList(requestParameters, "&", quotedValues: true)}"
             : null;
 
@@ -75,8 +87,7 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
 
          if (!responseText.ToLowerInvariant().Contains("oauth_token"))
          {
-            string[] tokenAction = parameters.TokenAction.Split('-');
-            var builder = new StringBuilder($"An error occured during the when trying to {tokenAction[0]} {tokenAction[1]} token.");
+            var builder = new StringBuilder($"An error occured when trying to {parameters.HttpMethod.Method}: {parameters.Url}.");
             builder.Append($"The response was: >> { responseText} <<\n\n");
             throw new Exception(builder.ToString());
          }
@@ -85,7 +96,7 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       }
 
       /// <summary>
-      /// 6.2.1. Consumer Directs the User to the Service Provider
+      /// OAuth1.0a - 6.2.1. - Consumer Directs the User to the Service Provider
       /// </summary>
       /// <param name="parameters"></param>
       /// <returns></returns>
@@ -102,19 +113,26 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
          return authorzationUrl;
       }
 
-      public AuthenticationHeaderValue GetOAuthHeader(HttpMethod httpMethod, string url, Dictionary<string, string> parameters)
-      {
-         return new AuthenticationHeaderValue("OAuth", GetOAuthHeaderValue(httpMethod, url, parameters));
-      }
-
       /// <summary>
-      /// OAuth 5.4.1 - Authorization Header
+      /// 
       /// </summary>
       /// <param name="httpMethod"></param>
       /// <param name="url"></param>
       /// <param name="parameters"></param>
       /// <returns></returns>
-      public string GetOAuthHeaderValue(HttpMethod httpMethod, string url, Dictionary<string, string> parameters)
+      public virtual AuthenticationHeaderValue GetOAuthHeader(HttpMethod httpMethod, string url, Dictionary<string, string> parameters)
+      {
+         return new AuthenticationHeaderValue("OAuth", GetOAuthHeaderValue(httpMethod, url, parameters));
+      }
+
+      /// <summary>
+      /// OAuth1.0a - 5.4.1 - Authorization Header
+      /// </summary>
+      /// <param name="httpMethod"></param>
+      /// <param name="url"></param>
+      /// <param name="parameters"></param>
+      /// <returns></returns>
+      public virtual string GetOAuthHeaderValue(HttpMethod httpMethod, string url, Dictionary<string, string> parameters)
       {
          LoadQueryStringParameters(url, loadIntoDict: parameters);
 
@@ -133,7 +151,7 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       }
 
       /// <summary>
-      /// OAuth 6 - Authenticating with OAuth
+      /// OAuth1.0a - 6 - Authenticating with OAuth
       /// </summary>
       /// <param name="requestParameters"></param>
       /// <returns></returns>
@@ -159,7 +177,7 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       }
 
       /// <summary>
-      /// 
+      /// OAuth1.0a - 8 - Nonce and Timestamp
       /// </summary>
       /// <returns></returns>
       protected virtual string GetNonce()
@@ -168,7 +186,7 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       }
 
       /// <summary>
-      /// 
+      /// OAuth1.0a - 8 - Nonce and Timestamp
       /// </summary>
       /// <returns></returns>
       protected virtual string GetTimeStamp()
@@ -178,36 +196,34 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       }
 
       /// <summary>
-      /// OAuth 9.1 - Generating Signature Base String
+      /// OAuth1.0a - 9.1 - Generating Signature Base String
       /// </summary>
-      /// <param name="method"></param>
+      /// <param name="httpMethod"></param>
       /// <param name="requestUrl"></param>
       /// <param name="requestParameters"></param>
       /// <returns></returns>
       protected virtual string GetSignatureBaseString(HttpMethod httpMethod, string requestUrl, Dictionary<string, string> requestParameters)
       {
          // 9.1.1
-         var signatureParameters = requestParameters.OrderBy(p => $"{p.Key}={p.Value}")
-                                                    .ToDictionary(p => p.Key, p => p.Value);
-         string normalizedParameters = ConcatParameterList(signatureParameters, "&", quotedValues: false);
+         string normalizedParameters = GetNormalizedParameters(requestParameters);
 
          // 9.1.2
-         requestUrl = ConstructRequestUrl(requestUrl);
+         string signaturetUrl = ConstructRequestUrl(requestUrl);
 
          // 9.1.3
-         return $"{httpMethod.Method.ToUpper()}&{Uri.EscapeDataString(requestUrl)}&{Uri.EscapeDataString(normalizedParameters)}";
+         return $"{httpMethod.Method.ToUpper()}&{Uri.EscapeDataString(signaturetUrl)}&{Uri.EscapeDataString(normalizedParameters)}";
       }
 
       /// <summary>
-      /// OAuth 9.2 Generating Signature
+      /// OAuth1.0a - 9.2 - Generating Signature
       /// </summary>
       /// <param name="signatureBaseString"></param>
       /// <param name="consumerSecret"></param>
       /// <param name="tokenSecret"></param>
       /// <returns></returns>
-      protected virtual string GetSignature(string signatureBaseString, string consumerSecret, string tokenSecret = null)
+      protected virtual string GetSignature(string signatureBaseString, string consumerSecret, string tokenSecret = "")
       {
-         string key = $"{GetEscapedDataString(consumerSecret)}&{GetEscapedDataString(tokenSecret ?? "")}";
+         string key = $"{GetEscapedDataString(consumerSecret)}&{GetEscapedDataString(tokenSecret)}";
 
          using (var hmacsha1 = new HMACSHA1 { Key = Encoding.ASCII.GetBytes(key) })
          {
@@ -219,7 +235,23 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       }
 
       /// <summary>
-      /// 9.1.2.  Construct Request URL
+      /// OAuth1.0a - 9.1.1 - Normalize Request Parameters
+      /// </summary>
+      /// <param name="parameters"></param>
+      /// <returns></returns>
+      protected virtual string GetNormalizedParameters(Dictionary<string, string> parameters)
+      {
+         var normalizedParameters1 = new Dictionary<string, string>(parameters);
+         normalizedParameters1.Remove("realm");
+
+         var normalizedParameters2 = normalizedParameters1.OrderBy(p => $"{p.Key}={p.Value}")
+                                                          .ToDictionary(p => p.Key, p => p.Value);
+
+         return ConcatParameterList(normalizedParameters2, "&", quotedValues: false);
+      }
+
+      /// <summary>
+      /// OAuth1.0a - 9.1.2 - Construct Request URL
       /// </summary>
       /// <param name="url"></param>
       /// <returns></returns>
@@ -235,10 +267,11 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       }
 
       /// <summary>
-      /// OAuth 9.1.1 - Normalize Request Parameters
+      /// Concatenate members of a Dictionary<string, string> into a delimited string
       /// </summary>
       /// <param name="parameters"></param>
       /// <param name="delimiter"></param>
+      /// <param name="quotedValues"></param>
       /// <returns></returns>
       protected virtual string ConcatParameterList(Dictionary<string, string> parameters, string delimiter, bool quotedValues = false)
       {
@@ -251,7 +284,6 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
                stringBuilder.Append(delimiter);
 
             stringBuilder.Append($"{parameter.Key}={escapedQuote}{ parameter.Value}{escapedQuote}");
-
          }
 
          return stringBuilder.ToString().TrimEnd(delimiter.ToCharArray());
@@ -280,8 +312,8 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       /// Extracts and loads non "oauth_" parameters from queryString into a dictionary
       /// </summary>
       /// <param name="url"></param>
-      /// <param name="parameters"></param>
-      protected void LoadQueryStringParameters(string url, Dictionary<string, string> loadIntoDict)
+      /// <param name="loadIntoDict"></param>
+      protected virtual void LoadQueryStringParameters(string url, Dictionary<string, string> loadIntoDict)
       {
          var requestUri = new Uri(url, UriKind.Absolute);
 
@@ -352,21 +384,22 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
             string oauthTokenSecret = null;
             string oauthCallbackConfirmed = null;
 
-            string[] keyValPairs = responseText.Split('&');
+            string[] keyValuePairs = responseText.Split('&');
 
-            for (int i = 0; i < keyValPairs.Length; i++)
+            foreach (string keyValuePair in keyValuePairs)
             {
-               string[] splits = keyValPairs[i].Split('=');
-               switch (splits[0])
+               string[] keyValueData = keyValuePair.Split('=');
+
+               switch (keyValueData[0])
                {
                   case "oauth_token":
-                     oauthToken = splits[1];
+                     oauthToken = keyValueData[1];
                      break;
                   case "oauth_token_secret":
-                     oauthTokenSecret = splits[1];
+                     oauthTokenSecret = keyValueData[1];
                      break;
                   case "oauth_callback_confirmed":
-                     oauthCallbackConfirmed = splits[1];
+                     oauthCallbackConfirmed = keyValueData[1];
                      break;
                }
             }
@@ -374,12 +407,12 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
             var tokenInfo = new T() { oauth_token = oauthToken, oauth_token_secret = oauthTokenSecret };
 
             if (tokenInfo is RequestTokenInfo requestTokenInfo)
-               requestTokenInfo.oauth_callback_confirmed = Convert.ToBoolean(oauthCallbackConfirmed);
+               requestTokenInfo.oauth_callback_confirmed = Convert.ToBoolean(oauthCallbackConfirmed ?? "false");
 
             return tokenInfo;
          }
 
-         throw new Exception("Empty response text.");
+         throw new ArgumentException("Response text is null or empty.");
       }
    }
 }

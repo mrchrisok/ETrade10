@@ -21,18 +21,18 @@ namespace OkonkwoETrade10.REST
          {
             var tokenParameters = new OAuthParameters()
             {
-               TokenAction = "revoke-access",
                HttpMethod = HttpMethod.Get,
                Url = $"{GetServer(EServer.OAuth)}revoke_access_token",
                Binding = OAuthParametersBinding.Header,
                Values = new Dictionary<string, string>
                {
-                  { "oauth_token", Credentials.RequestToken.oauth_token },
-                  { "oauth_token_secret", Credentials.RequestToken.oauth_token_secret }
+                  { "oauth_callback", "oob" },
+                  { "oauth_token", Credentials.AccessToken.oauth_token },
+                  { "oauth_token_secret", Credentials.AccessToken.oauth_token_secret }
                }
             };
 
-            var accessTokenInfo = await OAuthSvc.GetAccessTokenAsync(tokenParameters);
+            var accessTokenInfo = await OAuthSvc.RevokeAccessTokenAsync(tokenParameters);
 
             Credentials.AccessToken = null;
          }

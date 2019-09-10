@@ -21,7 +21,6 @@ namespace OkonkwoETrade10.REST
          {
             var tokenParameters = new OAuthParameters()
             {
-               TokenAction = "get-accesss",
                HttpMethod = HttpMethod.Get,
                Url = $"{GetServer(EServer.OAuth)}access_token",
                Binding = OAuthParametersBinding.Header,
@@ -34,12 +33,14 @@ namespace OkonkwoETrade10.REST
                }
             };
 
+            var tokenExpiresTime = GetTokenExpirationTime();
             var accessTokenInfo = await OAuthSvc.GetAccessTokenAsync(tokenParameters);
 
             Credentials.AccessToken = new AccessTokenResponse()
             {
                oauth_token = accessTokenInfo.oauth_token,
-               oauth_token_secret = accessTokenInfo.oauth_token_secret
+               oauth_token_secret = accessTokenInfo.oauth_token_secret,
+               tokenExpiresTime = tokenExpiresTime
             };
          }
          catch (Exception ex)
@@ -54,6 +55,8 @@ namespace OkonkwoETrade10.REST
    /// </summary>
    public class AccessTokenResponse : Response
    {
+      public DateTime tokenExpiresTime { get; set; }
+
       /// <summary>
       /// The consumer’s access token
       /// </summary>

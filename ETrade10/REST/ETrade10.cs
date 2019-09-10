@@ -110,12 +110,7 @@ namespace OkonkwoETrade10.REST
          {
             Version = "1.0",
             ConsumerKey = Credentials.consumerKey,
-            ConsumerSecret = Credentials.consumerSecret,
-            //RequestTokenUrl = $"{GetServer(EServer.OAuth)}request_token",
-            //AuthorizeTokenUrl = GetServer(EServer.Authorize),
-            //AccessTokenUrl = $"{GetServer(EServer.OAuth)}access_token",
-            //RenewAccessTokenUrl = $"{GetServer(EServer.OAuth)}renew_access_token",
-            //RevokeAccessTokenUrl = $"{GetServer(EServer.OAuth)}revoke_access_token"
+            ConsumerSecret = Credentials.consumerSecret
          };
 
          OAuthSvc = new ETradeOAuth10(oauthConfig);
@@ -460,6 +455,11 @@ namespace OkonkwoETrade10.REST
          string json = ConvertToJSON(input, true);
 
          return JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+      }
+
+      protected static DateTime GetTokenExpirationTime()
+      {
+         return DateTime.UtcNow.AddHours(2.0);
       }
       #endregion
 

@@ -12,7 +12,6 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
 
    public class OAuthParameters
    {
-      public string TokenAction { get; set; }
       public HttpMethod HttpMethod { get; set; }
       public string Url { get; set; }
       public Dictionary<string, string> Values { get; set; }
