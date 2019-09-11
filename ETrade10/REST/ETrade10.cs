@@ -41,12 +41,12 @@ namespace OkonkwoETrade10.REST
    {
       private static Credentials Credentials;
       private static readonly Dictionary<EEnvironment, Dictionary<EServer, string>> Servers;
-      private static ETradeOAuth10 OAuthSvc;
+      private static IOAuthService OAuthSvc;
 
       private IWebDriver WebDriver { get; }
 
       [ImportingConstructor]
-      public ETrade10(IWebDriver webDriver)
+      public ETrade10(IOAuthService oauthService, IWebDriver webDriver)
       {
          // need to set up a DI container for this
 
@@ -113,7 +113,7 @@ namespace OkonkwoETrade10.REST
             ConsumerSecret = Credentials.consumerSecret
          };
 
-         OAuthSvc = new ETradeOAuth10(oauthConfig);
+         OAuthSvc.Initialize(oauthConfig);
 
          await GetRequestTokenAsync();
          //

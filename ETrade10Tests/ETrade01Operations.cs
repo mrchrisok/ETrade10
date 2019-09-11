@@ -2,8 +2,10 @@
 using System.IO;
 using System.Threading.Tasks;
 using System.Xml;
+using ETrade10Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
+using OkonkwoETrade10.Authorization.OkonkwoOAuth;
 using OkonkwoETrade10.Framework;
 using OkonkwoETrade10.REST;
 using static OkonkwoETrade10.REST.ETrade10;
@@ -144,7 +146,7 @@ namespace OkonkwoETrade10Tests
             throw new ApplicationException("Could not read api credentials.", ex);
          }
 
-         m_ETrade10 = new ETrade10(null);
+         m_ETrade10 = new ETrade10(MEFLoader.Container.GetExportedValue<IOAuthService>(), null);
          await m_ETrade10.Initialize(credentials);
       }
 

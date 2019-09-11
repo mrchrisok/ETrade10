@@ -1,15 +1,16 @@
-﻿using System.Threading.Tasks;
+﻿using System.Composition;
+using System.Threading.Tasks;
+using OkonkwoETrade10.Authorization.OkonkwoOAuth;
 
-namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
+namespace OkonkwoETrade10.Authorization
 {
-   //https://oauth.net/core/1.0a/
-   //https://oauth1.wp-api.org/docs/basics/Auth-Flow.html
+   /// <summary>
+   /// https://oauth.net/core/1.0a/
+   /// https://oauth1.wp-api.org/docs/basics/Auth-Flow.html
+   /// </summary>
+   [Export("ETradeOAuthService", typeof(IOAuthService))]
    public class ETradeOAuth10 : OkonkwoOAuthBase
    {
-      public ETradeOAuth10(OAuthConfig config) : base(config)
-      {
-      }
-
       /// <summary>
       /// 6.2.1. Consumer Directs the User to the Service Provider
       /// </summary>
@@ -43,7 +44,7 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       /// </summary>
       /// <param name="parameters"></param>
       /// <returns></returns>
-      public virtual async Task<AccessTokenInfo> RenewAccessTokenAsync(OAuthParameters parameters)
+      public override async Task<AccessTokenInfo> RenewAccessTokenAsync(OAuthParameters parameters)
       {
          return await SendTokenRequestAsync<AccessTokenInfo>(parameters);
       }
@@ -53,7 +54,7 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       /// </summary>
       /// <param name="parameters"></param>
       /// <returns></returns>
-      public virtual async Task<AccessTokenInfo> RevokeAccessTokenAsync(OAuthParameters parameters)
+      public override async Task<AccessTokenInfo> RevokeAccessTokenAsync(OAuthParameters parameters)
       {
          return await SendTokenRequestAsync<AccessTokenInfo>(parameters);
       }

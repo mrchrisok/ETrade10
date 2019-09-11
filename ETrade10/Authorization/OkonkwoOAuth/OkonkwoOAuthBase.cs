@@ -9,11 +9,15 @@ using System.Threading.Tasks;
 
 namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
 {
-   public abstract class OkonkwoOAuthBase : IOkonkwoOAuth
+   public abstract class OkonkwoOAuthBase : IOAuthService
    {
-      protected readonly OAuthConfig _config;
+      protected OAuthConfig _config;
 
-      public OkonkwoOAuthBase(OAuthConfig config)
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <param name="config"></param>
+      public virtual void Initialize(OAuthConfig config)
       {
          _config = config;
       }
@@ -49,6 +53,26 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
          parameters.Values = GetOAuthRequestParameters(parameters.Values);
 
          return await SendTokenRequestAsync<AccessTokenInfo>(parameters);
+      }
+
+      /// <summary>
+      /// This behavior is optional. Implement as needed via an override in a sub-class.
+      /// </summary>
+      /// <param name="parameters"></param>
+      /// <returns></returns>
+      public virtual Task<AccessTokenInfo> RenewAccessTokenAsync(OAuthParameters parameters)
+      {
+         throw new NotImplementedException("This behavior is optional. Implement as needed via an override in a sub-class.");
+      }
+
+      /// <summary>
+      /// This behavior is optional. Implement as needed via an override in a sub-class.
+      /// </summary>
+      /// <param name="parameters"></param>
+      /// <returns></returns>
+      public virtual Task<AccessTokenInfo> RevokeAccessTokenAsync(OAuthParameters parameters)
+      {
+         throw new NotImplementedException("This behavior is optional. Implement as needed via an override in a sub-class.");
       }
 
       /// <summary>
