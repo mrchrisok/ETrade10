@@ -160,18 +160,19 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       {
          LoadQueryStringParameters(url, loadIntoDict: parameters);
 
-         if (!parameters.ContainsKey("oauth_signature"))
+         var headerParameters = GetOAuthRequestParameters(parameters);
+
+         if (!headerParameters.ContainsKey("oauth_signature"))
          {
-            parameters.TryGetValue("oauth_token_secret", out string oauth_token_secret);
+            headerParameters.TryGetValue("oauth_token_secret", out string oauth_token_secret);
+            headerParameters.Remove("oauth_token_secret");
             //
-            string signatureBaseString = GetSignatureBaseString(httpMethod, url, parameters);
+            string signatureBaseString = GetSignatureBaseString(httpMethod, url, headerParameters);
             string signature = GetSignature(signatureBaseString, _config.ConsumerSecret, oauth_token_secret);
             parameters.Add("oauth_signature", Uri.EscapeDataString(signature));
          }
 
-         parameters.TryGetValue("realm", out string realm);
-
-         return $"realm=\"{realm ?? ""}\",{ConcatParameterList(parameters, ",", quotedValues: true)}";
+         return ConcatParameterList(headerParameters, ",", quotedValues: true);
       }
 
       /// <summary>
@@ -245,9 +246,9 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       /// <param name="consumerSecret"></param>
       /// <param name="tokenSecret"></param>
       /// <returns></returns>
-      protected virtual string GetSignature(string signatureBaseString, string consumerSecret, string tokenSecret = "")
+      protected virtual string GetSignature(string signatureBaseString, string consumerSecret, string tokenSecret)
       {
-         string key = $"{GetEscapedDataString(consumerSecret)}&{GetEscapedDataString(tokenSecret)}";
+         string key = $"{GetEscapedDataString(consumerSecret)}&{GetEscapedDataString(tokenSecret ?? "")}";
 
          using (var hmacsha1 = new HMACSHA1 { Key = Encoding.ASCII.GetBytes(key) })
          {
@@ -325,6 +326,7 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
 
          // this is a rudimentary check to see if stringData has already been escaped
          // more sophisticated implementations can be implemented by overriding this method
+
          if (splitStringData?.Length > 1)
             if (splitStringData.Skip(1).ToArray().Any(data => data.Length >= 2))
                return stringData;

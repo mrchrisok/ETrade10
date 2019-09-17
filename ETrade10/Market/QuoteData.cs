@@ -8,14 +8,6 @@ namespace OkonkwoETrade10.Market
    public class QuoteData
    {
       /// <summary>
-      /// The quote details to be displayed.
-      /// This field depends on the detailFlag input parameter.
-      /// For example, if detailFlag is ALL, AllQuoteDetails are displayed.
-      /// If detailFlag is MF_DETAIL, the MutualFund structure gets displayed.
-      /// </summary>
-      public AllQuoteDetails all { get; set; }
-
-      /// <summary>
       /// The date and time of the quote
       /// </summary>
       public string dateTime { get; set; }
@@ -35,11 +27,18 @@ namespace OkonkwoETrade10.Market
       /// </summary>
       public string ahFlag { get; set; }
 
-
       /// <summary>
-      /// The Quote API will not populate any value for an invalid symbol.When an invalid symbol is requested, the API returns the Messages structure as part of QuoteResponse instead of using the errorMessage string in QuoteData.For this reason, Quote API clients should refer to Messages in the QuoteResponse.	
+      /// The Quote API will not populate any value for an invalid symbol. When an invalid symbol is requested, the API returns the Messages structure as part of QuoteResponse instead of using the errorMessage string in QuoteData. For this reason, Quote API clients should refer to Messages in the QuoteResponse.	
       /// </summary>
       public string errorMessage { get; set; }
+
+      /// <summary>
+      /// The quote details to be displayed.
+      /// This field depends on the detailFlag input parameter.
+      /// For example, if detailFlag is ALL, AllQuoteDetails are displayed.
+      /// If detailFlag is MF_DETAIL, the MutualFund structure gets displayed.
+      /// </summary>
+      public AllQuoteDetails All { get; set; }
 
       /// <summary>
       /// The quote details to be displayed. This field depends on the detailFlag input parameter. For example, if detailFlag is ALL, AllQuoteDetails are displayed.If detailFlag is MF_DETAIL, the MutualFund structure gets displayed.
@@ -60,7 +59,7 @@ namespace OkonkwoETrade10.Market
       /// <summary>
       /// The product details for the symbol the quote has been requested for
       /// </summary>
-      public Product product { get; set; }
+      public Product Product { get; set; }
 
       /// <summary>
       /// The quote details to be displayed. This field depends on the detailFlag input parameter. 

@@ -12,7 +12,7 @@ namespace OkonkwoETrade10.REST
       /// </summary>
       /// <param name="accountIdKey">The unique account key</param>
       /// <returns>An OptionExpireDateResponse object</returns>
-      public static async Task<ListOrdersResponse> ListOrdersAsync(string accountIdKey, ListOrdersParameters parameters)
+      public async Task<ListOrdersResponse> ListOrdersAsync(string accountIdKey, ListOrdersParameters parameters)
       {
          string uri = ServerUri(EServer.Accounts) + $"{accountIdKey}/orders";
 

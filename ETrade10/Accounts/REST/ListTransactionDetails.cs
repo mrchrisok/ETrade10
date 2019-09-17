@@ -19,7 +19,7 @@ namespace OkonkwoETrade10.REST
       /// <param name="accountIdKey">summary will be retrieved for this account id</param>
       /// <param name="tranId">the transaction identifier</param>
       /// <returns>the transaction details for the specified transaction (transactionId)</returns>
-      public static async Task<Transaction> ListTransactionDetailsAsync(string accountIdKey, long tranId, TransactionDetailsParameters parameters)
+      public async Task<Transaction> ListTransactionDetailsAsync(string accountIdKey, long tranId, TransactionDetailsParameters parameters)
       {
          string uri = ServerUri(EServer.Accounts) + $"{accountIdKey}/transactions/{tranId}";
 

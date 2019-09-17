@@ -10,7 +10,7 @@ namespace OkonkwoETrade10.REST
       /// <param name="id">The alert details parameters</param>
       /// <param name="parameters">The alert details parameters</param>
       /// <returns>An AlertDetailsResponse object</returns>
-      public static async Task<AlertDetailsResponse> ListAlertDetailsAsync(long id, AlertDetailsParameters parameters)
+      public async Task<AlertDetailsResponse> ListAlertDetailsAsync(long id, AlertDetailsParameters parameters)
       {
          string uri = ServerUri(EServer.Alerts) + $"{id}";
 

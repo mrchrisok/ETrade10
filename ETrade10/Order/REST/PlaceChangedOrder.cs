@@ -12,7 +12,7 @@ namespace OkonkwoETrade10.REST
       /// <param name="accountIdKey">The unique account key</param>
       /// <param name="orderId">The unique account key</param>
       /// <returns>a PostOrderResponse object</returns>
-      public static async Task<PlaceOrderResponse> PlaceChangedOrderAsync(string accountIdKey, string orderId, PlaceOrderRequest request)
+      public async Task<PlaceOrderResponse> PlaceChangedOrderAsync(string accountIdKey, string orderId, PlaceOrderRequest request)
       {
          string uri = ServerUri(EServer.Accounts) + $"{accountIdKey}/orders/{orderId}/change/place";
 

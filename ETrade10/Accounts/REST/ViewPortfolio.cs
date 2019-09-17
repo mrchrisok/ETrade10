@@ -13,7 +13,7 @@ namespace OkonkwoETrade10.REST
       /// </summary>
       /// <param name="accountIdKey">The unique account key</param>
       /// <returns>Detailed portfolio information for a selected brokerage account.</returns>
-      public static async Task<PortfolioResponse> ViewPortfolioAsync(string accountIdKey, PortfolioParameters parameters)
+      public async Task<PortfolioResponse> ViewPortfolioAsync(string accountIdKey, PortfolioParameters parameters)
       {
          string uri = ServerUri(EServer.Accounts) + $"{accountIdKey}/porfolio";
 

@@ -12,7 +12,7 @@ namespace OkonkwoETrade10.REST
       /// </summary>
       /// <param name="parameters">The alerts list parameters</param>
       /// <returns>An AlertsResponse object</returns>
-      public static async Task<OptionChainResponse> GetOptionChainAsync(OptionChainParameters parameters)
+      public async Task<OptionChainResponse> GetOptionChainAsync(OptionChainParameters parameters)
       {
          string uri = ServerUri(EServer.Market) + $"optionchains";
 

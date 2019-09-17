@@ -12,7 +12,7 @@ namespace OkonkwoETrade10.REST
       /// </summary>
       /// <param name="accountIdKey">The unique account key</param>
       /// <returns>a CancelOrderResponse object</returns>
-      public static async Task<CancelOrderResponse> CancelOrderAsync(string accountIdKey, CancelOrderRequest request)
+      public async Task<CancelOrderResponse> CancelOrderAsync(string accountIdKey, CancelOrderRequest request)
       {
          string uri = ServerUri(EServer.Accounts) + $"{accountIdKey}/orders/cancel";
 

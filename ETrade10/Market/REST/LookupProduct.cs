@@ -12,7 +12,7 @@ namespace OkonkwoETrade10.REST
       /// </summary>
       /// <param name="search">The search request</param>
       /// <returns>A QuoteResponse object</returns>
-      public static async Task<LookupResponse> LookupProductAsync(string search)
+      public async Task<LookupResponse> LookupProductAsync(string search)
       {
          string uri = ServerUri(EServer.Market) + $"lookup/{search}";
 

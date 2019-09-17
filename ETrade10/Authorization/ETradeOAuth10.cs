@@ -8,7 +8,7 @@ namespace OkonkwoETrade10.Authorization
    /// https://oauth.net/core/1.0a/
    /// https://oauth1.wp-api.org/docs/basics/Auth-Flow.html
    /// </summary>
-   [Export("ETradeOAuthService", typeof(IOAuthService))]
+   [Export(typeof(IOAuthService))]
    public class ETradeOAuth10 : OkonkwoOAuthBase
    {
       /// <summary>

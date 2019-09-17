@@ -1,10 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
-using OANDACommon = OkonkwoETrade10.Framework.Common;
+using ETrade10Common = OkonkwoETrade10.Framework.Common;
 
 namespace OkonkwoETrade10.REST
 {
+   public partial class ETrade10Response : Response
+   {
+
+   }
+
    public class Response
    {
       /// <summary>
@@ -27,15 +32,15 @@ namespace OkonkwoETrade10.REST
       {
          // use reflection to display all the properties that have non default values
          var result = new StringBuilder();
-         var props = GetType().GetTypeInfo().DeclaredProperties;
+         var properties = GetType().GetTypeInfo().DeclaredProperties;
          result.AppendLine("{");
-         foreach (var prop in props)
+         foreach (var prop in properties)
          {
             if (prop.Name != "clientExtensions")
             {
                object value = prop.GetValue(this);
                bool valueIsNull = value == null;
-               object defaultValue = OANDACommon.GetDefault(prop.PropertyType);
+               object defaultValue = ETrade10Common.GetDefault(prop.PropertyType);
                bool defaultValueIsNull = defaultValue == null;
                if ((valueIsNull != defaultValueIsNull) // one is null when the other isn't
                    || (!valueIsNull && (value.ToString() != defaultValue.ToString()))) // both aren't null, so compare as strings

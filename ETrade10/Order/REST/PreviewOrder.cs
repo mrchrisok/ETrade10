@@ -14,7 +14,7 @@ namespace OkonkwoETrade10.REST
       /// </summary>
       /// <param name="accountIdKey">The unique account key</param>
       /// <returns>a PostOrderResponse object</returns>
-      public static async Task<PreviewOrderResponse> PreviewOrderAsync(string accountIdKey, PreviewOrderRequest request)
+      public async Task<PreviewOrderResponse> PreviewOrderAsync(string accountIdKey, PreviewOrderRequest request)
       {
          string uri = ServerUri(EServer.Accounts) + $"{accountIdKey}/orders/preview";
 

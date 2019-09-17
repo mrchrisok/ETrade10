@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using OkonkwoETrade10.Authorization.OkonkwoOAuth;
 using OpenQA.Selenium;
+using OpenQA.Selenium.Support.UI;
 
 namespace OkonkwoETrade10.REST
 {
@@ -57,6 +58,8 @@ namespace OkonkwoETrade10.REST
 
       private IWebElement FindDriverElement(string tagName, string id = "", string name = "", string value = "")
       {
+         WaitForLoad(WebDriver);
+
          IEnumerable<IWebElement> elements = WebDriver.FindElements(By.TagName(tagName));
          IWebElement foundElement = null;
 
@@ -92,6 +95,14 @@ namespace OkonkwoETrade10.REST
 
          string elementNotFoundMessage = $"Unique element (tagName: {tagName}, id: {id}, name: {name}, value: {value}) not found.";
          throw new Exception(elementNotFoundMessage);
+      }
+
+      private static void WaitForLoad(IWebDriver driver, int timeoutSec = 15)
+      {
+         IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+         WebDriverWait wait = new WebDriverWait(driver, new TimeSpan(0, 0, timeoutSec));
+         wait.Until(wd => js.ExecuteScript("return document.readyState").ToString() == "complete");
+         Task.Delay(10).Wait(); // wait a bit
       }
    }
 

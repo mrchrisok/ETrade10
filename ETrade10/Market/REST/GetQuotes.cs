@@ -13,25 +13,25 @@ namespace OkonkwoETrade10.REST
       /// </summary>
       /// <param name="symbols">Comma separated list of symbols list</param>
       /// <returns>A QuoteResponse object</returns>
-      public static async Task<QuotesResponse> GetQuotesAsync(List<string> symbols)
+      public async Task<QuoteResponse> GetQuotesAsync(List<string> symbols)
       {
          string uri = ServerUri(EServer.Market) + $"quote/{GetCommaSeparatedString(symbols)}";
 
-         var response = await MakeRequestAsync<QuotesResponse, QuotesErrorResponse>(uri);
+         var response = await MakeRequestAsync(uri);
 
-         return response;
+         return response.QuoteResponse;
       }
    }
 
    /// <summary>
    /// https://apisb.etrade.com/docs/api/market/api-quote-v1.html#/definitions/QuoteResponse
    /// </summary>
-   public class QuotesResponse : Response
+   public class QuoteResponse
    {
       /// <summary>
       /// The Quote Message Data
       /// </summary>
-      public List<QuoteData> quoteData { get; set; }
+      public List<QuoteData> QuoteData;
 
       /// <summary>
       /// The Quote response Message
@@ -42,7 +42,12 @@ namespace OkonkwoETrade10.REST
    /// <summary>
    /// The GET error response.
    /// </summary>
-   public class QuotesErrorResponse : ErrorResponse
+   public class QuoteErrorResponse : ErrorResponse
    {
+   }
+
+   public partial class ETrade10Response : Response
+   {
+      public QuoteResponse QuoteResponse { get; set; }
    }
 }

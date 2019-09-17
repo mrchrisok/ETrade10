@@ -28,7 +28,7 @@ namespace OkonkwoETrade10App
       {
          WriteNewLine("Setting your ETrade10 credentials ...");
 
-         _ETrade10 = new ETrade10(null);
+         _ETrade10 = new ETrade10(null, null);
 
          await _ETrade10.Initialize(GetCredentials(null));
 
@@ -43,7 +43,6 @@ namespace OkonkwoETrade10App
          string environment = m_Environment.ToString();
          fileName = fileName ?? $@"C:\Users\Osita\SourceCode\GitHub\ETrade10\etrade{environment}.credentials.json";
 
-         Credentials credentials = null;
          try
          {
             using (var sr = new StreamReader(fileName))
@@ -52,10 +51,10 @@ namespace OkonkwoETrade10App
                // for info, go to: https://developer.etrade.com/home
 
                string jsonCredentials = sr.ReadToEnd();
-               credentials = JsonConvert.DeserializeObject<Credentials>(jsonCredentials);
+               var credentials = JsonConvert.DeserializeObject<Credentials>(jsonCredentials);
                credentials.environment = m_Environment;
 
-               return JsonConvert.DeserializeObject<Credentials>(jsonCredentials);
+               return credentials;
             }
          }
          catch (Exception ex)
@@ -71,7 +70,7 @@ namespace OkonkwoETrade10App
 
          // first, check the market status for the INSTRUMENT
          // if it is tradeable, we'll try to make some money :)
-         if (!(await OkonkwoETrade10.Framework.Utilities.IsMarketHalted(INSTRUMENT)))
+         if (!(await _ETrade10.IsMarketHalted(INSTRUMENT)))
          {
             WriteNewLine($"{INSTRUMENT} is open and rockin', so let's start trading!");
 

@@ -13,7 +13,7 @@ namespace OkonkwoETrade10.REST
       /// <param name="orderId">The order Id</param>
       /// <param name="request">The body of the preview order request</param>
       /// <returns>a PostOrderResponse object</returns>
-      public static async Task<PreviewOrderResponse> ChangePreviewedOrderAsync(string accountIdKey, string orderId, PreviewOrderRequest request)
+      public async Task<PreviewOrderResponse> ChangePreviewedOrderAsync(string accountIdKey, string orderId, PreviewOrderRequest request)
       {
          string uri = ServerUri(EServer.Accounts) + $"{accountIdKey}/orders/{orderId}/change/preview";
 

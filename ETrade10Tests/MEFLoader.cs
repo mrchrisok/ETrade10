@@ -1,15 +1,16 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel.Composition.Hosting;
-using System.ComponentModel.Composition.Primitives;
+﻿using System;
+using System.Collections.Generic;
+using System.Composition.Hosting;
+using System.Reflection;
 using OkonkwoETrade10.Authorization;
 
 namespace ETrade10Tests
 {
    public static class MEFLoader
    {
-      static AggregateExportProvider m_Container;
+      private static CompositionHost m_Container;
 
-      public static AggregateExportProvider Container
+      public static CompositionHost Container
       {
          get
          {
@@ -20,32 +21,28 @@ namespace ETrade10Tests
          }
       }
 
-      public static AggregateExportProvider Init(ICollection<ComposablePartCatalog> partsCatalogs)
+      public static CompositionHost Init(IEnumerable<Assembly> clientAssemblies)
       {
-         var clientCatalog = new AggregateCatalog();
-         if (partsCatalogs != null)  // discover objects in passed in assembly catalog
-            foreach (var part in partsCatalogs)
-               clientCatalog.Catalogs.Add(part);
+         var configuration = new ContainerConfiguration();
 
-         var clientContainer = new CompositionContainer(clientCatalog, true);
-         var coreContainer = GetCoreContainer();
+         foreach (var coreType in GetCoreTypes())
+            configuration.WithPart(coreType);
 
-         var aggregateExportProvider = new AggregateExportProvider(
-              clientContainer, // exports in this container have precedence
-              coreContainer);
+         if (clientAssemblies != null)
+            foreach (var clientAssembly in clientAssemblies)
+               foreach (var clientType in clientAssembly.GetTypes())
+                  configuration.WithPart(clientType);
 
-         return aggregateExportProvider;
+         return configuration.CreateContainer();
       }
 
-      private static CompositionContainer GetCoreContainer()
+      private static Type[] GetCoreTypes()
       {
-         var catalog = new AggregateCatalog();
+         var coreTypes = new List<Type>();
 
-         catalog.Catalogs.Add(new AssemblyCatalog(typeof(ETradeOAuth10).Assembly));
+         coreTypes.AddRange(typeof(ETradeOAuth10).Assembly.GetTypes());
 
-         var container = new CompositionContainer(catalog, true);
-
-         return container;
+         return coreTypes.ToArray();
       }
    }
 }

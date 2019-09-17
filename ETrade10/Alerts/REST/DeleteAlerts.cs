@@ -12,7 +12,7 @@ namespace OkonkwoETrade10.REST
       /// </summary>
       /// <param name="alertIdList">Comma separated alertId list</param>
       /// <returns>Success or failure. If a failure, returns a list of failed alert Ids.</returns>
-      public static async Task<DeleteAlertsResponse> DeleteAlertsAsync(List<long> alertIdList)
+      public async Task<DeleteAlertsResponse> DeleteAlertsAsync(List<long> alertIdList)
       {
          var alertIdLongList = alertIdList.ConvertAll(id => id.ToString());
 

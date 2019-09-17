@@ -14,7 +14,7 @@ namespace OkonkwoETrade10.REST
       /// <param name="accountIdKey">The unique account key. Retrievable by calling the List Accounts API.</param>
       /// <param name="parameters">The account balance parameters</param>
       /// <returns>The information returned includes account type, option level, and details on up to four balances - account balance, margin account balance, day trade balance, and cash account balance.</returns>
-      public static async Task<BalanceResponse> GetAccountBalancesAsync(string accountIdKey, BalanceParameters parameters)
+      public async Task<BalanceResponse> GetAccountBalancesAsync(string accountIdKey, BalanceParameters parameters)
       {
          string uri = ServerUri(EServer.Accounts) + $"{accountIdKey}/balance";
 

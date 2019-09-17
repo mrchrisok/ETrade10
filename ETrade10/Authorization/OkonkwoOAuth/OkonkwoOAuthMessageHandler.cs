@@ -9,12 +9,12 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
    {
       private readonly string _accessToken;
       private readonly string _accessTokenSecret;
-      private ETradeOAuth10 _tinyOAuth;
+      private IOAuthService _oauthSvc;
 
-      public OkonkwoOAuthMessageHandler(OAuthConfig config, string accessToken, string accessTokenSecret)
+      public OkonkwoOAuthMessageHandler(IOAuthService oauthSvc, string accessToken, string accessTokenSecret)
          : base(new HttpClientHandler())
       {
-         _tinyOAuth = new ETradeOAuth10(config);
+         _oauthSvc = oauthSvc;
          _accessTokenSecret = accessTokenSecret;
          _accessToken = accessToken;
       }
@@ -27,7 +27,7 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
             { "oauth_token_secret", _accessTokenSecret }
          };
 
-         request.Headers.Authorization = _tinyOAuth.GetOAuthHeader(request.Method, request.RequestUri.AbsoluteUri, parameters);
+         request.Headers.Authorization = _oauthSvc.GetOAuthHeader(request.Method, request.RequestUri.AbsoluteUri, parameters);
 
          //
          return base.SendAsync(request, cancellationToken);

@@ -6,6 +6,7 @@ using ETrade10Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using OkonkwoETrade10.Authorization.OkonkwoOAuth;
+using OkonkwoETrade10.Common;
 using OkonkwoETrade10.Framework;
 using OkonkwoETrade10.REST;
 using static OkonkwoETrade10.REST.ETrade10;
@@ -18,8 +19,6 @@ namespace OkonkwoETrade10Tests
 
       private static EEnvironment m_Environment = EEnvironment.Sandbox;
       private static string AccountID;
-      private static string m_ConsumerKey;
-      private static string m_ConsumerSecret;
       private static short m_Accounts = 2;
 
       #endregion
@@ -28,7 +27,7 @@ namespace OkonkwoETrade10Tests
 
       private static bool m_ApiOperationsComplete = false;
       private static string m_Currency = "USD";
-      //private static string m_Instrument = InstrumentName.Currency.USDCHF;
+      private static string m_Security = SecurityNames.ExchangeTradedFunds.SPDRSP500;
       //private static List<Instrument> m_OandaInstruments;
       //private static List<Price> m_OandaPrices;
       private static long m_FirstTransactionID;
@@ -47,14 +46,14 @@ namespace OkonkwoETrade10Tests
          {
             InitializeApplicationAsync().Wait();
 
-            if (ETrade10.HasServer(EServer.Accounts))
+            if (m_ETrade10.HasServer(EServer.Accounts))
             {
                // first, get accounts
                // this operation adds the test AccountId to Credentials (if it is null)
-               Account_GetAccountsList(m_Accounts).Wait();
+               //Account_GetAccountsList(m_Accounts).Wait();
 
                // second, check market status
-               Initialize_GetMarketStatus().Wait();
+               Market_GetMarketStatus().Wait();
 
                // third, proceed with all other operations
                //await Account_GetAccountDetails();
@@ -74,14 +73,14 @@ namespace OkonkwoETrade10Tests
                //await Instrument_GetInstrumentPositionBook();
 
                // test the pricing stream
-               if (ETrade10.HasServer(EServer.PricingStream))
+               if (m_ETrade10.HasServer(EServer.PricingStream))
                {
                   //Stream_GetStreamingPrices();
                }
 
                // start transactions stream
                Task transactionsStreamCheck = null;
-               if (ETrade10.HasServer(EServer.TransactionsStream))
+               if (m_ETrade10.HasServer(EServer.TransactionsStream))
                {
                   //transactionsStreamCheck = Stream_GetStreamingTransactions();
                }
@@ -146,15 +145,18 @@ namespace OkonkwoETrade10Tests
             throw new ApplicationException("Could not read api credentials.", ex);
          }
 
-         m_ETrade10 = new ETrade10(MEFLoader.Container.GetExportedValue<IOAuthService>(), null);
+         m_ETrade10 = new ETrade10(MEFLoader.Container.GetExport<IOAuthService>(), null);
          await m_ETrade10.Initialize(credentials);
       }
 
-      private static async Task Initialize_GetMarketStatus()
+      /// <param name="symbol"></param>
+      /// <returns></returns>
+      private static async Task Market_GetMarketStatus()
       {
-         bool marketIsHalted = await Utilities.IsMarketHalted();
+         bool marketIsHalted = await m_ETrade10.IsMarketHalted(m_Security);
          m_Results.Verify("00.0", marketIsHalted, "Market is halted.");
-         if (marketIsHalted) throw new MarketHaltedException("Unable to continue tests. OANDA Fx market is halted!");
+         if (marketIsHalted)
+            throw new MarketHaltedException($"Unable to continue tests. Test security {m_Security} is halted!");
       }
 
       /// <summary>

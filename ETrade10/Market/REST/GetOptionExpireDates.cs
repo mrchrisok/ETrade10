@@ -13,7 +13,7 @@ namespace OkonkwoETrade10.REST
       /// </summary>
       /// <param name="parameters">The request parameters</param>
       /// <returns>An OptionExpireDateResponse object</returns>
-      public static async Task<List<ExpirationDate>> GetOptionExpireDatesAsync(OptionExpireDateParameters parameters)
+      public async Task<List<ExpirationDate>> GetOptionExpireDatesAsync(OptionExpireDateParameters parameters)
       {
          string uri = ServerUri(EServer.Market) + "/optionexpiredate";
 
