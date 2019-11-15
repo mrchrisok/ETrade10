@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace OkonkwoETrade10.Market
 {
@@ -326,6 +327,7 @@ namespace OkonkwoETrade10.Market
       /// <summary>
       /// QuoteDetails when market is in extended hours; appears only for after-hours market and when detailFlag is ALL or all
       /// </summary>
+      [JsonProperty("ExtendedHourQuoteDetail")]
       public ExtendedHourQuoteDetail ehQuote { get; set; }
 
       /// <summary>

@@ -38,9 +38,17 @@ namespace OkonkwoETrade10.REST
 
          if (webDriver == null)
          {
-            var options = new ChromeOptions();
-            options.AddArgument("--headless");
-            WebDriver = new ChromeDriver(System.Environment.CurrentDirectory, options);
+            try
+            {
+               var options = new ChromeOptions();
+               options.AddArgument("--headless");
+               WebDriver = new ChromeDriver(System.Environment.CurrentDirectory, options);
+            }
+            catch
+            {
+               WebDriver?.Dispose();
+               WebDriver = null;
+            }
          }
          else
          {
@@ -138,28 +146,15 @@ namespace OkonkwoETrade10.REST
       /// </summary>
       /// <param name="symbol">Instrument to check if halted. Default is SPX.</param>
       /// <returns>True if trading is halted, false if trading is not halted.</returns>
-      public async Task<bool> IsMarketHalted(string symbol = SecurityNames.ExchangeTradedFunds.SPDRSP500)
+      public async Task<bool> IsMarketHalted(IEnumerable<string> symbols = null)
       {
-         var symbols = new List<string>() { symbol };
+         symbols = symbols ?? new List<string>() { SecurityNames.ExchangeTradedFunds.SPDRSP500 };
 
          var quotes = await GetQuotesAsync(symbols);
 
          bool isTradeable = quotes.QuoteData[0].quoteStatus == QuoteStatus.RealTime;
 
          return !(isTradeable);
-      }
-
-      /// <summary>
-      /// Sends a web request to a remote endpoint (uri).
-      /// </summary>
-      /// <typeparam name="T">The response type</typeparam>
-      /// <param name="uri">The uri of the remote service</param>
-      /// <param name="method">method for the request (defaults to GET)</param>
-      /// <param name="requestParams">optional parameters (if provided, it's assumed the uri doesn't contain any)</param>
-      /// <returns>A success response object of type T or a failure response object of type ErrorResponse</returns>
-      private async Task<T> MakeRequestAsync<T>(string uri, string method = "GET", WebHeaderCollection headers = null, Dictionary<string, string> requestParams = null)
-      {
-         return await MakeRequestAsync<T, ErrorResponse>(uri, method, headers, requestParams);
       }
 
       /// <summary>
@@ -176,6 +171,20 @@ namespace OkonkwoETrade10.REST
       }
 
       /// <summary>
+      /// Sends a web request to a remote endpoint (uri).
+      /// </summary>
+      /// <typeparam name="T">The response type</typeparam>
+      /// <param name="uri">The uri of the remote service</param>
+      /// <param name="method">method for the request (defaults to GET)</param>
+      /// <param name="requestParams">any optional parameters</param>
+      /// <returns>An ETrade10Response or a failure response object of type E</returns>
+      private async Task<ETrade10Response> MakeRequestAsync<E>(string uri, string method = "GET", WebHeaderCollection headers = null, Dictionary<string, string> requestParams = null)
+         where E : IErrorResponse
+      {
+         return await MakeRequestAsync<ETrade10Response, E>(uri, method, headers, requestParams);
+      }
+
+      /// <summary>
       /// Sends a web request to a remote service (uri).
       /// </summary>
       /// <typeparam name="T">The success response type</typeparam>
@@ -187,7 +196,9 @@ namespace OkonkwoETrade10.REST
       private async Task<T> MakeRequestAsync<T, E>(string uri, string method = "GET", WebHeaderCollection headers = null, Dictionary<string, string> requestParams = null)
          where E : IErrorResponse
       {
-         uri = _config.PreferJson ? uri += ".json" : uri;
+         bool acceptJson = headers?[HttpRequestHeader.Accept] == "application/json";
+
+         uri = (acceptJson || _config.PreferJson) ? uri += ".json" : uri;
 
          if (requestParams?.Count > 0)
          {
@@ -265,6 +276,7 @@ namespace OkonkwoETrade10.REST
                if (contentType.Equals(MediaTypeNames.Application.Json))
                {
                   string json = reader.ReadToEnd();
+                  var jObject = JsonConvert.DeserializeObject(json);
                   var result = JsonConvert.DeserializeObject<T>(json);
                   return result;
                }
@@ -278,6 +290,7 @@ namespace OkonkwoETrade10.REST
                   var result = (T)new XmlSerializer(typeof(T)).Deserialize(reader);
                   return result;
                }
+
                throw new ArgumentException($"HttpResponseHeader.ContentType: {contentType} not supported.");
             }
          }
@@ -433,7 +446,7 @@ namespace OkonkwoETrade10.REST
       /// </summary>
       /// <param name="items">The list of strings to convert to csv</param>
       /// <returns>A csv string of the list items</returns>
-      private string GetCommaSeparatedString(List<string> items)
+      private string GetCommaSeparatedString(IEnumerable<string> items)
       {
          var stringBuilder = new StringBuilder();
          foreach (string item in items)

@@ -102,7 +102,7 @@ namespace OkonkwoETrade10.REST
          IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
          WebDriverWait wait = new WebDriverWait(driver, new TimeSpan(0, 0, timeoutSec));
          wait.Until(wd => js.ExecuteScript("return document.readyState").ToString() == "complete");
-         Task.Delay(10).Wait(); // wait a bit
+         Task.Delay(50).Wait(); // wait a bit
       }
    }
 

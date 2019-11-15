@@ -158,18 +158,20 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       /// <returns></returns>
       public virtual string GetOAuthHeaderValue(HttpMethod httpMethod, string url, Dictionary<string, string> parameters)
       {
-         LoadQueryStringParameters(url, loadIntoDict: parameters);
-
          var headerParameters = GetOAuthRequestParameters(parameters);
 
          if (!headerParameters.ContainsKey("oauth_signature"))
          {
-            headerParameters.TryGetValue("oauth_token_secret", out string oauth_token_secret);
-            headerParameters.Remove("oauth_token_secret");
+            var signatureParameters = new Dictionary<string, string>(headerParameters);
+            LoadQueryStringParameters(url, loadInto: signatureParameters);
             //
-            string signatureBaseString = GetSignatureBaseString(httpMethod, url, headerParameters);
+            signatureParameters.TryGetValue("oauth_token_secret", out string oauth_token_secret);
+            signatureParameters.Remove("oauth_token_secret");
+            //
+            string signatureBaseString = GetSignatureBaseString(httpMethod, url, signatureParameters);
             string signature = GetSignature(signatureBaseString, _config.ConsumerSecret, oauth_token_secret);
-            parameters.Add("oauth_signature", Uri.EscapeDataString(signature));
+            //
+            headerParameters.Add("oauth_signature", Uri.EscapeDataString(signature));
          }
 
          return ConcatParameterList(headerParameters, ",", quotedValues: true);
@@ -180,7 +182,7 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       /// </summary>
       /// <param name="requestParameters"></param>
       /// <returns></returns>
-      protected virtual Dictionary<string, string> GetOAuthRequestParameters(Dictionary<string, string> requestParameters = null)
+      protected virtual Dictionary<string, string> GetOAuthRequestParameters(Dictionary<string, string> parameters = null)
       {
          var oauthParameters = new Dictionary<string, string>
          {
@@ -191,12 +193,13 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
             { "oauth_version", _config.Version }
          };
 
-         if (requestParameters == null)
+         if (parameters == null)
             return oauthParameters;
 
+         var requestParameters = new Dictionary<string, string>(parameters);
+
          foreach (var parameter in oauthParameters)
-            if (!requestParameters.ContainsKey(parameter.Key))
-               requestParameters.Add(parameter.Key, parameter.Value);
+            requestParameters.TryAdd(parameter.Key, parameter.Value);
 
          return requestParameters;
       }
@@ -338,22 +341,22 @@ namespace OkonkwoETrade10.Authorization.OkonkwoOAuth
       /// Extracts and loads non "oauth_" parameters from queryString into a dictionary
       /// </summary>
       /// <param name="url"></param>
-      /// <param name="loadIntoDict"></param>
-      protected virtual void LoadQueryStringParameters(string url, Dictionary<string, string> loadIntoDict)
+      /// <param name="loadInto"></param>
+      protected virtual void LoadQueryStringParameters(string url, Dictionary<string, string> loadInto)
       {
          var requestUri = new Uri(url, UriKind.Absolute);
 
          if (!string.IsNullOrWhiteSpace(requestUri.Query))
-            foreach (string parameter in requestUri.Query.Split('&'))
+            foreach (string parameter in requestUri.Query.TrimStart('?').Split('&'))
                if (!string.IsNullOrEmpty(parameter) && !parameter.StartsWith("oauth_"))
                   if (parameter.IndexOf('=') > -1)
                   {
                      string[] parameterParts = parameter.Split('=');
-                     loadIntoDict.Add(parameterParts[0], parameterParts[1]);
+                     loadInto.Add(parameterParts[0], parameterParts[1]);
                   }
                   else
                   {
-                     loadIntoDict.Add(parameter, string.Empty);
+                     loadInto.Add(parameter, string.Empty);
                   }
       }
 

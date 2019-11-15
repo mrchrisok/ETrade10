@@ -1,5 +1,4 @@
-﻿using System.Net;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using OkonkwoETrade10.Accounts;
 
 namespace OkonkwoETrade10.REST
@@ -19,16 +18,15 @@ namespace OkonkwoETrade10.REST
       /// <param name="accountIdKey">summary will be retrieved for this account id</param>
       /// <param name="tranId">the transaction identifier</param>
       /// <returns>the transaction details for the specified transaction (transactionId)</returns>
-      public async Task<Transaction> ListTransactionDetailsAsync(string accountIdKey, long tranId, TransactionDetailsParameters parameters)
+      public async Task<TransactionDetailsResponse> ListTransactionDetailsAsync(string accountIdKey, long tranId, TransactionDetailsParameters parameters)
       {
          string uri = ServerUri(EServer.Accounts) + $"{accountIdKey}/transactions/{tranId}";
 
          var requestParams = ConvertToDictionary(parameters);
-         var headers = new WebHeaderCollection { { HttpRequestHeader.Accept, "application/json" } };
 
-         var response = await MakeRequestAsync<TransactionDetailsResponse, TransactionDetailsErrorResponse>(uri, null, headers, requestParams);
+         var response = await MakeRequestAsync<TransactionDetailsErrorResponse>(uri, requestParams: requestParams);
 
-         return response.transaction;
+         return response.TransactionDetailsResponse;
       }
 
       public class TransactionDetailsParameters
@@ -46,9 +44,44 @@ namespace OkonkwoETrade10.REST
    public class TransactionDetailsResponse : Response
    {
       /// <summary>
-      /// The summary of the requested Account.
+      /// Numeric transaction ID
       /// </summary>
-      public Transaction transaction { get; set; }
+      public long transactionId { get; set; }
+
+      /// <summary>
+      /// Numeric account ID
+      /// </summary>
+      public string accountId { get; set; }
+
+      /// <summary>
+      /// Date of the specified transaction
+      /// </summary>
+      public long transactionDate { get; set; }
+
+      /// <summary>
+      /// The post date
+      /// </summary>
+      public long postDate { get; set; }
+
+      /// <summary>
+      /// Total cost of transaction, including commission if any
+      /// </summary>
+      public decimal amount { get; set; }
+
+      /// <summary>
+      /// The transaction description
+      /// </summary>
+      public string description { get; set; }
+
+      /// <summary>
+      /// User-defined category
+      /// </summary>
+      public Category category { get; set; }
+
+      /// <summary>
+      /// The brokerage involved in the transaction
+      /// </summary>
+      public Brokerage brokerage { get; set; }
    }
 
    /// <summary>

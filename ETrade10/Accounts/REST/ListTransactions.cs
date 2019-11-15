@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Net;
 using System.Threading.Tasks;
 using OkonkwoETrade10.Accounts;
 
@@ -13,16 +12,15 @@ namespace OkonkwoETrade10.REST
       /// </summary>
       /// <param name="accountIdKey">summary will be retrieved for this account id</param>
       /// <returns>an AccountSummary object containing the account details</returns>
-      public async Task<List<Transaction>> ListTransactionsAsync(string accountIdKey, TransactionListParameters parameters)
+      public async Task<TransactionListResponse> ListTransactionsAsync(string accountIdKey, TransactionListParameters parameters)
       {
          string uri = ServerUri(EServer.Accounts) + $"{accountIdKey}/transactions";
 
          var requestParams = ConvertToDictionary(parameters);
-         var headers = new WebHeaderCollection { { HttpRequestHeader.Accept, "application/json" } };
 
-         var response = await MakeRequestAsync<TransactionListResponse, TransactionsListErrorResponse>(uri, null, headers, requestParams);
+         var response = await MakeRequestAsync<TransactionsListErrorResponse>(uri, requestParams: requestParams);
 
-         return response.transactions;
+         return response?.TransactionListResponse;
       }
 
       public class TransactionListParameters
@@ -50,7 +48,7 @@ namespace OkonkwoETrade10.REST
          /// <summary>
          /// Number of transactions to return in the response. If not specified, defaults to 50. Used for paging.
          /// </summary>
-         public int count { get; set; }
+         public int? count { get; set; }
       }
    }
 

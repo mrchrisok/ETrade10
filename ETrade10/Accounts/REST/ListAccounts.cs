@@ -13,8 +13,9 @@ namespace OkonkwoETrade10.REST
       {
          string uri = ServerUri(EServer.Accounts) + "list";
 
-         var response = await MakeRequestAsync<AccountListResponse, AccountListErrorResponse>(uri);
-         return response.accounts;
+         var response = await MakeRequestAsync<AccountListErrorResponse>(uri);
+
+         return response.AccountListResponse.accounts;
       }
    }
 

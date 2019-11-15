@@ -5,6 +5,7 @@ using System.Xml;
 using ETrade10Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
+using OkonkwoETrade10.Accounts;
 using OkonkwoETrade10.Authorization.OkonkwoOAuth;
 using OkonkwoETrade10.Common;
 using OkonkwoETrade10.Framework;
@@ -13,13 +14,20 @@ using static OkonkwoETrade10.REST.ETrade10;
 
 namespace OkonkwoETrade10Tests
 {
+   public class ETrade10TestConfiguration
+   {
+      // put this in the container
+   }
+
    public partial class ETrade10Test
    {
       #region Default Configuration
 
-      private static EEnvironment m_Environment = EEnvironment.Sandbox;
-      private static string AccountID;
-      private static short m_Accounts = 2;
+      private static EEnvironment m_Environment = EEnvironment.Production;
+      private static short m_NumberOfAccounts = 4;
+
+      private static Accounts m_Accounts;
+
 
       #endregion
 
@@ -27,10 +35,8 @@ namespace OkonkwoETrade10Tests
 
       private static bool m_ApiOperationsComplete = false;
       private static string m_Currency = "USD";
-      private static string m_Security = SecurityNames.ExchangeTradedFunds.SPDRSP500;
-      //private static List<Instrument> m_OandaInstruments;
-      //private static List<Price> m_OandaPrices;
-      private static long m_FirstTransactionID;
+      private static string m_Security = SecurityNames.Equities.Google;
+      private static long m_TestTransactionID = 19274101224905;
       private static long m_LastTransactionID;
       private static string m_LastTransactionTime;
       private static decimal m_TestNumber;
@@ -40,27 +46,22 @@ namespace OkonkwoETrade10Tests
       #endregion
 
       [ClassInitialize]
-      public static void RunApiOperations(TestContext context)
+      public static async Task RunApiOperations(TestContext context)
       {
          try
          {
-            InitializeApplicationAsync().Wait();
+            await InitializeApplicationAsync();
 
             if (m_ETrade10.HasServer(EServer.Accounts))
             {
-               // first, get accounts
-               // this operation adds the test AccountId to Credentials (if it is null)
-               //Account_GetAccountsList(m_Accounts).Wait();
+               await Market_GetMarketStatus();
 
-               // second, check market status
-               Market_GetMarketStatus().Wait();
-
-               // third, proceed with all other operations
-               //await Account_GetAccountDetails();
-               //await Account_GetAccountSummary();
-               //await Account_GetAccountsInstruments();
-               //await Account_GetSingleAccountInstrument();
-               //await Account_PatchAccountConfiguration();
+               // accounts
+               await Account_ListAccounts(m_NumberOfAccounts);
+               await Account_GetAccountBalances();
+               await Account_ListTransactions();
+               await Account_ListTransactionDetails();
+               //await Account_ViewPortfolio();
 
                //await Transaction_GetTransaction();
                //await Transaction_GetTransactionsSinceId();
@@ -153,44 +154,94 @@ namespace OkonkwoETrade10Tests
       /// <returns></returns>
       private static async Task Market_GetMarketStatus()
       {
-         bool marketIsHalted = await m_ETrade10.IsMarketHalted(m_Security);
+         var symbols0 = new[] { m_Security };
+
+         var symbols1 = new[] { m_Security,
+            "CDW", "ONCE", "BAC", "KEYS", "ALL", "HON", "VUG", "ALV", "UL", "GS", "JPM", "ROKU", "MGM", "OXY",
+            "CNC", "ULTA", "XLF", "CEC", "VOO", "BSX", "FB", "X", "SNAP", "KKR", "GLD", "PVH", "USO", "MASI",
+            "GPN", "CHW", "IBM", "CVX", "TRP", "JNJ", "DDS", "MSI", "GOOG", "CAT", "SQ", "ADSK", "TXG", "AMN",
+            "MHK", "CLF", "PEP", "PM", "BR", "BYND", "BMA", "RIO", "CB", "WMT", "AVLR", "GE", "CDNS", "LRCK",
+            "AAPL", "AMD", "C", "CRM", "DIS", "F", "ROK", "FDX", "MSFT", "ZOOM", "KLAC", "NFLX", "UPS", "WFC"
+         };
+
+         bool marketIsHalted = await m_ETrade10.IsMarketHalted(new[] { m_Security });
          m_Results.Verify("00.0", marketIsHalted, "Market is halted.");
-         if (marketIsHalted)
-            throw new MarketHaltedException($"Unable to continue tests. Test security {m_Security} is halted!");
+
+         //if (marketIsHalted)
+         //   throw new MarketHaltedException($"Unable to continue tests. Test security {m_Security} is halted!");
       }
+
+      #region Account operations
 
       /// <summary>
       /// Retrieve the list of accounts associated with the account token
       /// </summary>
       /// <param name="listCount"></param>
-      private static async Task Account_GetAccountsList(short? listCount = null)
+      private static async Task Account_ListAccounts(short? listCount = null)
       {
          short count = 0;
 
-         var result = await m_ETrade10.ListAccountsAsync();
-         m_Results.Verify("01.0", result.account.Count > 0, "Account list received.");
+         m_Accounts = await m_ETrade10.ListAccountsAsync();
+         m_Results.Verify("01.0", m_Accounts.account.Count > 0, "Account list received.");
 
          string message = "Correct number of accounts received.";
          bool correctCount = true;
          if (listCount.HasValue)
          {
             count++;
-            correctCount = result.account.Count == listCount;
-            message = $"Correct number of accounts ({result.account.Count}) received.";
+            correctCount = m_Accounts.account.Count == listCount;
+            message = $"Correct number of accounts ({m_Accounts.account.Count}) received.";
          }
          m_Results.Verify("01." + count.ToString(), correctCount, message);
 
-         foreach (var account in result.account)
+         foreach (var account in m_Accounts.account)
          {
             count++;
-            string description = string.Format("AccountIdKey {0} has correct format.", account.accountId);
-            m_Results.Verify("01." + count.ToString(), account.accountIdKey.Split('-').Length == 4, description);
+
+            var accountIdLength = account.accountId.Length;
+            var accountIdKeyLength = account.accountIdKey.Length;
+            string description = $"AccountIdKey {account.accountIdKey} has correct format.";
+            m_Results.Verify("01." + count.ToString(), accountIdKeyLength > accountIdLength, description);
          }
 
          // ensure the first account has sufficient funds
          //m_ConsumerSecret = m_ConsumerSecret ?? result.OrderBy(r => r.id).First().id;
          //Credentials.SetCredentials(m_Environment, m_ConsumerKey, m_ConsumerSecret);
       }
+
+      private static async Task Account_GetAccountBalances(short? listCount = null)
+      {
+         var accountIdKey = m_Accounts.account[0].accountIdKey;
+         var parameters = new BalanceParameters();
+         var result = await m_ETrade10.GetAccountBalancesAsync(accountIdKey, new BalanceParameters());
+         m_Results.Verify("02.0", result.Computed?.netCash > 0, "Account balance received.");
+      }
+
+      private static async Task Account_ListTransactions()
+      {
+         var accountIdKey = m_Accounts.account[0].accountIdKey;
+         var parameters = new TransactionListParameters()
+         {
+            startDate = DateTime.UtcNow.AddYears(-2).ToString("MMddyyyy")
+         };
+         var result = await m_ETrade10.ListTransactionsAsync(accountIdKey, parameters);
+         m_Results.Verify("03.0", result?.transactions.Count > 0, "Account transactions received.");
+         m_Results.Verify("03.1", result?.transactions.Count > 0, "Account transactions received.");
+         m_Results.Verify("03.2", result?.transactions.Count > 0, "Account transactions received.");
+      }
+
+      private static async Task Account_ListTransactionDetails()
+      {
+         var accountIdKey = m_Accounts.account[0].accountIdKey;
+         var parameters = new TransactionDetailsParameters();
+         var result = await m_ETrade10.ListTransactionDetailsAsync(accountIdKey, m_TestTransactionID, parameters);
+         m_Results.Verify("04.0", result != null, "Transaction details received.");
+         m_Results.Verify("04.1", result?.accountId != null, "Transaction id received.");
+         m_Results.Verify("04.2", result?.description != null, "Transaction description received.");
+         m_Results.Verify("04.3", result?.transactionDate != null, "Transaction time received.");
+      }
+
+      #endregion
 
       #region Utilities
       /// <summary>

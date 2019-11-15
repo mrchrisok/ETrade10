@@ -33,35 +33,104 @@ namespace OkonkwoETrade10Tests
       }
       #endregion
 
-      //#region Account
-      //[TestMethod]
-      //public void test_Account_retrieve_accounts_list()
-      //{
-      //   var accountsRetrieved = m_Results.Items.FirstOrDefault(x => x.Key == "01.0").Value as ETrade10TestResult;
+      #region Account
 
-      //   Assert.IsTrue(accountsRetrieved.Success, accountsRetrieved.Success.ToString() + ": " + accountsRetrieved.Details);
+      [TestMethod]
+      public void test_Account_get_accounts_list()
+      {
+         var accountsRetrieved = m_Results.Items.FirstOrDefault(x => x.Key == "01.0").Value as ETrade10TestResult;
+
+         Assert.IsTrue(accountsRetrieved.Success, accountsRetrieved.Success.ToString() + ": " + accountsRetrieved.Details);
+      }
+
+      [TestMethod]
+      public void test_Account_retrieve_correct_number_of_accounts()
+      {
+         string key = "01.1";
+         var result = m_Results.Items.FirstOrDefault(x => x.Key == key).Value as ETrade10TestResult;
+
+         Assert.IsTrue(result.Success, result.Success.ToString() + ": " + result.Details);
+      }
+
+      [TestMethod]
+      public void test_Account_accountIdKey_has_correct_format()
+      {
+         string key = "01.";
+         var results = m_Results.Items.Where(x => x.Key.StartsWith(key) && x.Key != "01.0" && x.Key != "01.1");
+         var failure = results.FirstOrDefault(x => x.Value.Success == false);
+
+         string message = failure.Key != null ? failure.Value.Success.ToString() + ": " + failure.Value.Details : "";
+
+         Assert.IsTrue(failure.Key == null, failure.Key + ": " + message);
+      }
+
+      [TestMethod]
+      public void test_Account_get_account_balances()
+      {
+         string key = "02.0";
+         var results = m_Results.Items.Where(x => x.Key == key);
+         var failure = results.FirstOrDefault(x => x.Value.Success == false);
+
+         Assert.IsTrue(failure.Key == null, failure.Key + ": " + failure.Value);
+      }
+
+      [TestMethod]
+      public void test_Account_get_transactions_by_date_range()
+      {
+         var transactionsReceived = m_Results.Items.FirstOrDefault(x => x.Key == "03.0").Value as ETrade10TestResult;
+         var markerSetWhenCountMoreThan50 = m_Results.Items.FirstOrDefault(x => x.Key == "03.1").Value as ETrade10TestResult;
+         var markerNotSetWhenCountLessThan50 = m_Results.Items.FirstOrDefault(x => x.Key == "03.2").Value as ETrade10TestResult;
+
+         Assert.IsTrue(transactionsReceived.Success, transactionsReceived.Success.ToString() + ": " + transactionsReceived.Details);
+         Assert.IsTrue(markerSetWhenCountMoreThan50.Success, markerSetWhenCountMoreThan50.Success.ToString() + ": " + markerSetWhenCountMoreThan50.Details);
+         Assert.IsTrue(markerNotSetWhenCountLessThan50.Success, markerNotSetWhenCountLessThan50.Success.ToString() + ": " + markerNotSetWhenCountLessThan50.Details);
+      }
+
+      [TestMethod]
+      public void test_Transaction_get_transaction_detail()
+      {
+         var transactionReceived = m_Results.Items.FirstOrDefault(x => x.Key == "4.0").Value as ETrade10TestResult;
+         var transactionHasId = m_Results.Items.FirstOrDefault(x => x.Key == "4.1").Value as ETrade10TestResult;
+         var transactionHasDescription = m_Results.Items.FirstOrDefault(x => x.Key == "4.2").Value as ETrade10TestResult;
+         var transactionHasTime = m_Results.Items.FirstOrDefault(x => x.Key == "4.3").Value as ETrade10TestResult;
+
+         Assert.IsTrue(transactionReceived.Success, transactionReceived.Success.ToString() + ": " + transactionReceived.Details);
+         Assert.IsTrue(transactionHasId.Success, transactionHasId.Success.ToString() + ": " + transactionHasId.Details);
+         Assert.IsTrue(transactionHasDescription.Success, transactionHasDescription.Success.ToString() + ": " + transactionHasDescription.Details);
+         Assert.IsTrue(transactionHasTime.Success, transactionHasTime.Success.ToString() + ": " + transactionHasTime.Details);
+      }
+
+      //[TestMethod]
+      //public void test_Transaction_get_transactions_since_id()
+      //{
+      //   var transactionsReceived = m_Results.Items.FirstOrDefault(x => x.Key == "10.0").Value as ETrade10TestResult;
+      //   var firstIdIsNextId = m_Results.Items.FirstOrDefault(x => x.Key == "10.1").Value as ETrade10TestResult;
+      //   var allIdsGreaterThanLastId = m_Results.Items.FirstOrDefault(x => x.Key == "10.2").Value as ETrade10TestResult;
+      //   var clientConfigureReceived = m_Results.Items.FirstOrDefault(x => x.Key == "10.3").Value as ETrade10TestResult;
+
+      //   Assert.IsTrue(transactionsReceived.Success, transactionsReceived.Success.ToString() + ": " + transactionsReceived.Details);
+      //   Assert.IsTrue(firstIdIsNextId.Success, firstIdIsNextId.Success.ToString() + ": " + firstIdIsNextId.Details);
+      //   Assert.IsTrue(allIdsGreaterThanLastId.Success, allIdsGreaterThanLastId.Success.ToString() + ": " + allIdsGreaterThanLastId.Details);
+      //   Assert.IsTrue(clientConfigureReceived.Success, clientConfigureReceived.Success.ToString() + ": " + clientConfigureReceived.Details);
       //}
 
       //[TestMethod]
-      //public void test_Account_retrieve_correct_number_of_accounts()
+      //public void test_Transaction_get_transactions_by_id_range()
       //{
-      //   string key = "01.1";
-      //   var result = m_Results.Items.FirstOrDefault(x => x.Key == key).Value as ETrade10TestResult;
+      //   var transactionsReceived = m_Results.Items.FirstOrDefault(x => x.Key == "16.0").Value as ETrade10TestResult;
+      //   var firstIdIsCorrect = m_Results.Items.FirstOrDefault(x => x.Key == "16.1").Value as ETrade10TestResult;
+      //   var allIdsGreaterThanFirst = m_Results.Items.FirstOrDefault(x => x.Key == "16.2").Value as ETrade10TestResult;
+      //   var clientConfiguredReturned = m_Results.Items.FirstOrDefault(x => x.Key == "16.3").Value as ETrade10TestResult;
+      //   var marketOrdersReturned = m_Results.Items.FirstOrDefault(x => x.Key == "16.4").Value as ETrade10TestResult;
 
-      //   Assert.IsTrue(result.Success, result.Success.ToString() + ": " + result.Details);
+      //   Assert.IsTrue(transactionsReceived.Success, transactionsReceived.Success.ToString() + ": " + transactionsReceived.Details);
+      //   Assert.IsTrue(firstIdIsCorrect.Success, firstIdIsCorrect.Success.ToString() + ": " + firstIdIsCorrect.Details);
+      //   Assert.IsTrue(allIdsGreaterThanFirst.Success, allIdsGreaterThanFirst.Success.ToString() + ": " + allIdsGreaterThanFirst.Details);
+      //   Assert.IsTrue(clientConfiguredReturned.Success, clientConfiguredReturned.Success.ToString() + ": " + clientConfiguredReturned.Details);
+      //   Assert.IsTrue(marketOrdersReturned.Success, marketOrdersReturned.Success.ToString() + ": " + marketOrdersReturned.Details);
       //}
 
-      //[TestMethod]
-      //public void test_Account_account_numbers_have_correct_format()
-      //{
-      //   string key = "01.";
-      //   var results = m_Results.Items.Where(x => x.Key.StartsWith(key) && x.Key != "01.0" && x.Key != "01.1");
-      //   var failure = results.FirstOrDefault(x => x.Value.Success == false);
-
-      //   string message = failure.Key != null ? failure.Value.Success.ToString() + ": " + failure.Value.Details : "";
-
-      //   Assert.IsTrue(failure.Key == null, failure.Key + ": " + message);
-      //}
+      #endregion
 
       //[TestMethod]
       //public void test_Account_retrieve_account_detail_info()
@@ -78,16 +147,6 @@ namespace OkonkwoETrade10Tests
       //   Assert.IsTrue(correctCurrency.Success, $"08.2,{correctCurrency.Success}: {correctCurrency.Details}");
       //   Assert.IsTrue(correctOpenTradeCount.Success, $"08.3,{correctOpenTradeCount.Success}: {correctOpenTradeCount.Details}");
       //   Assert.IsTrue(tradesMatchTradeCount.Success, $"08.4,{tradesMatchTradeCount.Success}: {tradesMatchTradeCount.Details}");
-      //}
-
-      //[TestMethod]
-      //public void test_Account_retrieve_instruments_list()
-      //{
-      //   string key = "02.0";
-      //   var results = m_Results.Items.Where(x => x.Key == key);
-      //   var failure = results.FirstOrDefault(x => x.Value.Success == false);
-
-      //   Assert.IsTrue(failure.Key == null, failure.Key + ": " + failure.Value);
       //}
 
       //[TestMethod]
@@ -427,64 +486,7 @@ namespace OkonkwoETrade10Tests
       //}
       //#endregion
 
-      //#region Transaction
-      //[TestMethod]
-      //public void test_Transaction_get_transactions_by_date_range()
-      //{
-      //   var transactionsReceived = m_Results.Items.FirstOrDefault(x => x.Key == "09.0").Value as ETrade10TestResult;
-      //   var clientConfigureReceived = m_Results.Items.FirstOrDefault(x => x.Key == "09.1").Value as ETrade10TestResult;
-      //   var notClientConfigureReceived = m_Results.Items.FirstOrDefault(x => x.Key == "09.2").Value as ETrade10TestResult;
 
-      //   Assert.IsTrue(transactionsReceived.Success, transactionsReceived.Success.ToString() + ": " + transactionsReceived.Details);
-      //   Assert.IsTrue(clientConfigureReceived.Success, clientConfigureReceived.Success.ToString() + ": " + clientConfigureReceived.Details);
-      //   Assert.IsTrue(transactionsReceived.Success, transactionsReceived.Success.ToString() + ": " + transactionsReceived.Details);
-      //   Assert.IsFalse(notClientConfigureReceived.Success, notClientConfigureReceived.Success.ToString() + ": " + notClientConfigureReceived.Details);
-      //}
-
-      //[TestMethod]
-      //public void test_Transaction_get_transactions_since_id()
-      //{
-      //   var transactionsReceived = m_Results.Items.FirstOrDefault(x => x.Key == "10.0").Value as ETrade10TestResult;
-      //   var firstIdIsNextId = m_Results.Items.FirstOrDefault(x => x.Key == "10.1").Value as ETrade10TestResult;
-      //   var allIdsGreaterThanLastId = m_Results.Items.FirstOrDefault(x => x.Key == "10.2").Value as ETrade10TestResult;
-      //   var clientConfigureReceived = m_Results.Items.FirstOrDefault(x => x.Key == "10.3").Value as ETrade10TestResult;
-
-      //   Assert.IsTrue(transactionsReceived.Success, transactionsReceived.Success.ToString() + ": " + transactionsReceived.Details);
-      //   Assert.IsTrue(firstIdIsNextId.Success, firstIdIsNextId.Success.ToString() + ": " + firstIdIsNextId.Details);
-      //   Assert.IsTrue(allIdsGreaterThanLastId.Success, allIdsGreaterThanLastId.Success.ToString() + ": " + allIdsGreaterThanLastId.Details);
-      //   Assert.IsTrue(clientConfigureReceived.Success, clientConfigureReceived.Success.ToString() + ": " + clientConfigureReceived.Details);
-      //}
-
-      //[TestMethod]
-      //public void test_Transaction_get_transaction_detail()
-      //{
-      //   var transactionReceived = m_Results.Items.FirstOrDefault(x => x.Key == "15.0").Value as ETrade10TestResult;
-      //   var transactionHasId = m_Results.Items.FirstOrDefault(x => x.Key == "15.1").Value as ETrade10TestResult;
-      //   var transactionHasType = m_Results.Items.FirstOrDefault(x => x.Key == "15.2").Value as ETrade10TestResult;
-      //   var transactionHasTime = m_Results.Items.FirstOrDefault(x => x.Key == "15.3").Value as ETrade10TestResult;
-
-      //   Assert.IsTrue(transactionReceived.Success, transactionReceived.Success.ToString() + ": " + transactionReceived.Details);
-      //   Assert.IsTrue(transactionHasId.Success, transactionHasId.Success.ToString() + ": " + transactionHasId.Details);
-      //   Assert.IsTrue(transactionHasType.Success, transactionHasType.Success.ToString() + ": " + transactionHasType.Details);
-      //   Assert.IsTrue(transactionHasTime.Success, transactionHasTime.Success.ToString() + ": " + transactionHasTime.Details);
-      //}
-
-      //[TestMethod]
-      //public void test_Transaction_get_transactions_by_id_range()
-      //{
-      //   var transactionsReceived = m_Results.Items.FirstOrDefault(x => x.Key == "16.0").Value as ETrade10TestResult;
-      //   var firstIdIsCorrect = m_Results.Items.FirstOrDefault(x => x.Key == "16.1").Value as ETrade10TestResult;
-      //   var allIdsGreaterThanFirst = m_Results.Items.FirstOrDefault(x => x.Key == "16.2").Value as ETrade10TestResult;
-      //   var clientConfiguredReturned = m_Results.Items.FirstOrDefault(x => x.Key == "16.3").Value as ETrade10TestResult;
-      //   var marketOrdersReturned = m_Results.Items.FirstOrDefault(x => x.Key == "16.4").Value as ETrade10TestResult;
-
-      //   Assert.IsTrue(transactionsReceived.Success, transactionsReceived.Success.ToString() + ": " + transactionsReceived.Details);
-      //   Assert.IsTrue(firstIdIsCorrect.Success, firstIdIsCorrect.Success.ToString() + ": " + firstIdIsCorrect.Details);
-      //   Assert.IsTrue(allIdsGreaterThanFirst.Success, allIdsGreaterThanFirst.Success.ToString() + ": " + allIdsGreaterThanFirst.Details);
-      //   Assert.IsTrue(clientConfiguredReturned.Success, clientConfiguredReturned.Success.ToString() + ": " + clientConfiguredReturned.Details);
-      //   Assert.IsTrue(marketOrdersReturned.Success, marketOrdersReturned.Success.ToString() + ": " + marketOrdersReturned.Details);
-      //}
-      //#endregion
 
       //#region Pricing
       //[TestMethod]

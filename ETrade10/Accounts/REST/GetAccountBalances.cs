@@ -20,12 +20,18 @@ namespace OkonkwoETrade10.REST
 
          var requestParams = ConvertToDictionary(parameters);
 
-         var response = await MakeRequestAsync<BalanceResponse, BalanceErrorResponse>(uri, requestParams: requestParams);
-         return response;
+         var response = await MakeRequestAsync<BalanceErrorResponse>(uri, requestParams: requestParams);
+
+         return response.BalanceResponse;
       }
 
+      /// <summary>
+      /// 
+      /// </summary>
       public class BalanceParameters
       {
+         public BalanceParameters() { instType = InstitutionType.Brokerage; }
+
          /// <summary>
          /// The registered account type
          /// </summary>
@@ -81,7 +87,8 @@ namespace OkonkwoETrade10.REST
       public string accountDescription { get; set; }
 
       /// <summary>
-      /// The quote type indicator: 0 = QUOTE REALTIME, 1 = QUOTE DELAYED, 2 = QUOTE CLOSING, 3 = QUOTE AHT REALTIME, 4 = QUOTE AHT BEFORE OPEN, 5 = QUOTE AHT CLOSING, 6 = QUOTE NONE	
+      /// The quote type indicator: 0 = QUOTE REALTIME, 1 = QUOTE DELAYED, 2 = QUOTE CLOSING, 
+      /// 3 = QUOTE AHT REALTIME, 4 = QUOTE AHT BEFORE OPEN, 5 = QUOTE AHT CLOSING, 6 = QUOTE NONE	
       /// </summary>
       public QuoteMode quoteMode { get; set; }
 
@@ -103,12 +110,12 @@ namespace OkonkwoETrade10.REST
       /// <summary>
       /// The open calls
       /// </summary>
-      public List<OpenCalls> openCalls { get; set; }
+      public List<OpenCalls> OpenCalls { get; set; }
 
       /// <summary>
       /// Designates that account is a cash account	
       /// </summary>
-      public Cash cash { get; set; }
+      public Cash Cash { get; set; }
 
       /// <summary>
       /// Designates that account is a margin account	
@@ -123,7 +130,7 @@ namespace OkonkwoETrade10.REST
       /// <summary>
       /// Designates the computed balance of the account	
       /// </summary>
-      public ComputedBalance compuatedBalance { get; set; }
+      public ComputedBalance Computed { get; set; }
    }
 
    /// <summary>

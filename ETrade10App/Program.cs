@@ -70,7 +70,7 @@ namespace OkonkwoETrade10App
 
          // first, check the market status for the INSTRUMENT
          // if it is tradeable, we'll try to make some money :)
-         if (!(await _ETrade10.IsMarketHalted(INSTRUMENT)))
+         if (!await _ETrade10.IsMarketHalted(new[] { INSTRUMENT }))
          {
             WriteNewLine($"{INSTRUMENT} is open and rockin', so let's start trading!");
 

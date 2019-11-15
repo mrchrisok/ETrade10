@@ -13,6 +13,7 @@ namespace OkonkwoETrade10.Accounts
    {
       public const string Cash = "CASH";
       public const string Margin = "MARGIN";
+      public const string PatterDayTrader = "PDT_ACCOUNT";
    }
    public class AccountStatus
    {
@@ -107,13 +108,20 @@ namespace OkonkwoETrade10.Accounts
       public const string VARCD = "VARCD";
       public const string VARIRACD = "VARIRACD";
    }
+
+   public class DayTraderStatus
+   {
+      public const string PDTMinEquityRes1XK = "PDT_MIN_EQUITY_RES_1XK";
+      public const string NoPDT = "NO_PDT";
+   }
+
    public enum OptionLevel
    {
-      None,
-      One,
-      Two,
-      Three,
-      Four
+      NO_OPTIONS,
+      LEVEL_1,
+      LEVEL_2,
+      LEVEL_3,
+      LEVEL_4
    }
    public class OptionType
    {
@@ -239,12 +247,13 @@ namespace OkonkwoETrade10.Accounts
       public const string PreMarketPercentChange = "PRE_MARKET_PCTCHANGE";
       public const string ExpandCollapseFlag = "EXPAND_COLLAPSE_FLAG";
    }
-   public class AccuontView
-   {
-      public const string Performance = "PERFORMANCE";
-      public const string Fundamental = "FUNDAMENTAL";
-      public const string OptionsWatch = "OPTIONSWATCH";
-      public const string Quick = "QUICK";
-      public const string Complete = "COMPLETE";
-   }
+
+   //public class AccountView
+   //{
+   //   public const string Performance = "PERFORMANCE";
+   //   public const string Fundamental = "FUNDAMENTAL";
+   //   public const string OptionsWatch = "OPTIONSWATCH";
+   //   public const string Quick = "QUICK";
+   //   public const string Complete = "COMPLETE";
+   //}
 }

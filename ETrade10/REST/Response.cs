@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text;
 using ETrade10Common = OkonkwoETrade10.Framework.Common;
 
@@ -7,23 +6,16 @@ namespace OkonkwoETrade10.REST
 {
    public partial class ETrade10Response : Response
    {
+      public AccountListResponse AccountListResponse { get; set; }
+      public BalanceResponse BalanceResponse { get; set; }
+      public TransactionListResponse TransactionListResponse { get; set; }
+      public TransactionDetailsResponse TransactionDetailsResponse { get; set; }
 
+      public QuoteResponse QuoteResponse { get; set; }
    }
 
    public class Response
    {
-      /// <summary>
-      /// The ID of the last Transaction created for the Account. Only
-      /// present if the Account exists.
-      /// </summary>
-      public long lastTransactionID { get; set; }
-
-      /// <summary>
-      /// The IDs of all Transactions that were created while satisfying the
-      /// request. Only present if the Account exists.
-      /// </summary>
-      public List<long> relatedTransactionIDs { get; set; }
-
       /// <summary>
       /// Writes the Response object to a JSON string
       /// </summary>
